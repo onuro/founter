@@ -35,31 +35,29 @@ export function ExportControls({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Download className="h-5 w-5" />
-          Export
-        </CardTitle>
+      <CardHeader>
+        <Download className="h-5 w-5 text-muted-foreground" />
+        <CardTitle>Export</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Format Selection */}
         <div className="flex gap-2">
           <Button
-            variant={format === 'png' ? 'default' : 'outline'}
+            variant="secondary"
             onClick={() => setFormat('png')}
             className={cn(
-              'flex-1',
-              format === 'png' && 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200'
+              "flex-1",
+              format === 'png' && "bg-white text-black hover:bg-white/90"
             )}
           >
             PNG
           </Button>
           <Button
-            variant={format === 'webp' ? 'default' : 'outline'}
+            variant="secondary"
             onClick={() => setFormat('webp')}
             className={cn(
-              'flex-1',
-              format === 'webp' && 'bg-neutral-100 text-neutral-900 hover:bg-neutral-200'
+              "flex-1",
+              format === 'webp' && "bg-white text-black hover:bg-white/90"
             )}
           >
             WebP
@@ -68,10 +66,10 @@ export function ExportControls({
 
         {/* Quality Slider (WebP only) */}
         {format === 'webp' && (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-400">Quality</span>
-              <span className="text-neutral-100">{Math.round(quality * 100)}%</span>
+              <span className="text-muted-foreground">Quality</span>
+              <span className="font-mono text-foreground">{Math.round(quality * 100)}%</span>
             </div>
             <Slider
               value={[quality]}
@@ -93,22 +91,22 @@ export function ExportControls({
         >
           {isExporting ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               Exporting...
             </>
           ) : (
             <>
-              <Download className="h-4 w-4 mr-2" />
+              <Download className="h-4 w-4" />
               Download {format.toUpperCase()}
             </>
           )}
         </Button>
 
         {error && (
-          <p className="text-sm text-red-400 text-center">{error}</p>
+          <p className="text-sm text-destructive text-center">{error}</p>
         )}
 
-        <p className="text-xs text-neutral-500 text-center">
+        <p className="text-xs text-muted-foreground text-center">
           Output: 1440 x 900px @ 2x resolution
         </p>
       </CardContent>

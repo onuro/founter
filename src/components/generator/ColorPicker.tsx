@@ -35,30 +35,28 @@ export function ColorPicker({ selected, onChange }: ColorPickerProps) {
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Palette className="h-5 w-5" />
-          Background Color
-        </CardTitle>
+      <CardHeader>
+        <Palette className="h-5 w-5 text-muted-foreground" />
+        <CardTitle>Background</CardTitle>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="presets" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-4">
+          <TabsList className="mb-4">
             <TabsTrigger value="presets">Presets</TabsTrigger>
             <TabsTrigger value="custom">Custom</TabsTrigger>
           </TabsList>
 
           <TabsContent value="presets" className="mt-0">
-            <div className="grid grid-cols-6 gap-2">
+            <div className="grid grid-cols-7 gap-3">
               {PREDEFINED_COLORS.map((color) => (
                 <button
                   key={color.hex}
                   onClick={() => onChange(color.hex)}
                   className={cn(
-                    'w-10 h-10 rounded-lg border-2 transition-all hover:scale-110',
+                    'aspect-square rounded-sm transition-all hover:scale-110',
                     selected === color.hex
-                      ? 'border-white ring-2 ring-white/30'
-                      : 'border-transparent hover:border-neutral-500'
+                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-105'
+                      : 'hover:ring-1 hover:ring-muted-foreground/30'
                   )}
                   style={{ backgroundColor: color.hex }}
                   title={color.name}
@@ -70,25 +68,26 @@ export function ColorPicker({ selected, onChange }: ColorPickerProps) {
           <TabsContent value="custom" className="mt-0 space-y-4">
             <div className="flex gap-2">
               <Input
-                placeholder="#735AC2"
+                placeholder="#FFEA00"
                 value={customHex}
                 onChange={(e) => handleCustomHexChange(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleCustomHexApply()}
-                className="flex-1"
+                className="flex-1 font-mono"
               />
               <Button onClick={handleCustomHexApply}>Apply</Button>
             </div>
             {hexError && (
-              <p className="text-sm text-red-400">{hexError}</p>
+              <p className="text-sm text-destructive">{hexError}</p>
             )}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <div
-                className="w-12 h-12 rounded-lg border border-neutral-700"
+                className="w-14 h-14 rounded-sm"
                 style={{ backgroundColor: isValidHex(normalizeHex(customHex)) ? normalizeHex(customHex) : selected }}
               />
-              <span className="text-sm text-neutral-400">
-                Current: {selected}
-              </span>
+              <div className="text-sm">
+                <p className="text-muted-foreground">Current</p>
+                <p className="font-mono">{selected}</p>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

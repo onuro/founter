@@ -1,6 +1,7 @@
 import { ColorOption } from '@/types/generator';
 
 export const PREDEFINED_COLORS: ColorOption[] = [
+  { name: 'Fountn Yellow', hex: '#FFEA00' },
   { name: 'Royal Purple', hex: '#735AC2' },
   { name: 'Teal Green', hex: '#75B09C' },
   { name: 'Warm Brown', hex: '#816F63' },

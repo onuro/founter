@@ -54,11 +54,9 @@ export function ImageUploader({
 
   return (
     <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <ImageIcon className="h-5 w-5" />
-          Screenshot
-        </CardTitle>
+      <CardHeader>
+        <ImageIcon className="h-5 w-5 text-muted-foreground" />
+        <CardTitle>Screenshot</CardTitle>
       </CardHeader>
       <CardContent>
         <input
@@ -71,24 +69,23 @@ export function ImageUploader({
 
         {image ? (
           <div className="space-y-3">
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-neutral-900 border border-neutral-800">
+            <div className="relative aspect-video rounded-sm overflow-hidden bg-secondary">
               <img
                 src={image.dataUrl}
                 alt="Uploaded screenshot"
                 className="w-full h-full object-contain"
               />
             </div>
-            <div className="flex items-center justify-between text-sm text-neutral-400">
-              <span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">
                 {image.width} x {image.height}px
               </span>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClear}
-                className="text-neutral-400 hover:text-neutral-100"
               >
-                <X className="h-4 w-4 mr-1" />
+                <X className="h-4 w-4" />
                 Remove
               </Button>
             </div>
@@ -98,27 +95,31 @@ export function ImageUploader({
             onClick={handleClick}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
-            className="border-2 border-dashed border-neutral-700 rounded-lg p-8 text-center cursor-pointer hover:border-neutral-500 hover:bg-neutral-900/50 transition-colors"
+            className="rounded-sm p-8 text-center cursor-pointer transition-all bg-secondary hover:bg-secondary/80 border-2 border-dashed border-transparent hover:border-primary/30"
           >
             {isLoading ? (
-              <div className="flex flex-col items-center gap-2 text-neutral-400">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-neutral-400" />
-                <span>Loading...</span>
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                <span className="text-muted-foreground">Loading...</span>
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-2 text-neutral-400">
-                <Upload className="h-8 w-8" />
-                <span>Drop an image here or click to browse</span>
-                <span className="text-xs text-neutral-500">
-                  PNG, JPG, WebP up to 10MB
-                </span>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Upload className="h-5 w-5 text-primary" />
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Drop image or click to browse</p>
+                  <p className="text-xs text-muted-foreground">
+                    PNG, JPG, WebP up to 10MB
+                  </p>
+                </div>
               </div>
             )}
           </div>
         )}
 
         {error && (
-          <p className="mt-2 text-sm text-red-400">{error}</p>
+          <p className="mt-3 text-sm text-destructive">{error}</p>
         )}
       </CardContent>
     </Card>
