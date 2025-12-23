@@ -23,7 +23,7 @@ export function MonitorFramePreview({ screenshotUrl, className }: MonitorFramePr
     <div className={cn('relative w-full h-full', className)}>
       {/* Monitor Body - positioned absolutely */}
       <div
-        className="absolute z-12 bg-zinc-900 rounded-sm shadow-2xl shadow-black/50"
+        className="absolute z-12 bg-zinc-950 rounded-sm shadow-2xl shadow-black/50"
         style={{
           top: '11.11%',
           left: '7.5%',
@@ -33,7 +33,7 @@ export function MonitorFramePreview({ screenshotUrl, className }: MonitorFramePr
         }}
       >
         {/* Screen Area */}
-        <div className="relative z-10 bg-zinc-950 rounded-xs overflow-hidden w-full h-full">
+        <div className="relative z-10 bg-zinc-800 rounded-xs overflow-hidden w-full h-full">
           {screenshotUrl ? (
             <img
               src={screenshotUrl}

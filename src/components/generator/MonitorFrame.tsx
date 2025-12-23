@@ -15,7 +15,7 @@ export function MonitorFrame({ screenshotUrl, className }: MonitorFrameProps) {
         {/* Monitor Container */}
         <div className="relative flex flex-col items-center">
           {/* Monitor Body */}
-          <div className="relative bg-zinc-900 rounded-sm p-3 shadow-2xl shadow-black/50">
+          <div className="relative z-4 bg-zinc-900 rounded-sm p-3 shadow-2xl shadow-black/50">
             {/* Screen Bezel */}
             {/* Screen Area - sized to fit within 1224px available width */}
             <div className="relative bg-zinc-950 rounded-xs overflow-hidden w-[1200px] h-[675px]">
@@ -31,7 +31,7 @@ export function MonitorFrame({ screenshotUrl, className }: MonitorFrameProps) {
                 </div>
               )}
               {/* Subtle screen reflection */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
+              <div className="absolute inset-0 z-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
             </div>
           </div>
 
