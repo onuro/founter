@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Founter
+
+Internal tools application for the Fountn.design team.
+
+## Features
+
+- **Newsletter Image Generator**: Create beautiful mockups for newsletter content
+- **Settings**: Manage API keys (BaseRow, OpenAI, Anthropic, GLM)
+
+## Tech Stack
+
+- Next.js 16 (App Router)
+- TypeScript
+- Tailwind CSS v4
+- Shadcn UI
+- Prisma + SQLite
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Set Up Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+# Authentication
+SITE_PASSWORD=your_password_here
+
+# Database
+DATABASE_URL="file:./dev.db"
+```
+
+### 3. Initialize Database
+
+```bash
+npx prisma db push
+```
+
+### 4. Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Production Deployment (Plesk/VPS)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Environment Variables
 
-## Learn More
+Set these in your production `.env`:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+SITE_PASSWORD=your_secure_password
+DATABASE_URL="file:./prod.db"
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2. Build the Application
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run build
+```
 
-## Deploy on Vercel
+### 3. Initialize Production Database
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Run this command once after deploying:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npx prisma db push
+```
+
+This creates the SQLite database file and tables.
+
+### 4. Directory Permissions
+
+Ensure the `prisma/` folder is writable so SQLite can create and modify the database file.
+
+### 5. Start the Application
+
+```bash
+npm start
+```
+
+## Database Management
+
+### View Database (Prisma Studio)
+
+```bash
+npx prisma studio
+```
+
+### Using Migrations (Recommended for Production)
+
+Instead of `db push`, use migrations for better control:
+
+```bash
+# Generate migration (local)
+npx prisma migrate dev --name init
+
+# Apply migrations (production)
+npx prisma migrate deploy
+```
+
+### Backup
+
+The SQLite database is stored at `prisma/prod.db`. Back up this file periodically as it contains your API keys.
+
+## Project Structure
+
+```
+founter/
+├── prisma/
+│   └── schema.prisma       # Database schema
+├── src/
+│   ├── app/
+│   │   ├── api/settings/   # Settings API
+│   │   ├── generator/      # Newsletter Generator page
+│   │   ├── login/          # Login page
+│   │   └── settings/       # Settings page
+│   ├── components/
+│   │   ├── generator/      # Generator components
+│   │   ├── settings/       # Settings components
+│   │   ├── shared/         # Shared components (Header)
+│   │   └── ui/             # Shadcn UI components
+│   ├── hooks/              # Custom React hooks
+│   ├── lib/                # Utilities (prisma, utils, colors)
+│   └── types/              # TypeScript interfaces
+└── package.json
+```

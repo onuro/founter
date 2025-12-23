@@ -95,7 +95,7 @@ export function ImageUploader({
             onClick={handleClick}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
-            className="rounded-sm p-8 text-center cursor-pointer transition-all bg-secondary hover:bg-secondary/80 border-2 border-dashed border-transparent hover:border-primary/30"
+            className="rounded-sm p-8 text-center cursor-pointer transition-all bg-secondary hover:bg-secondary/80 border-2 border-dashed border-transparent hover:border-white/10"
           >
             {isLoading ? (
               <div className="flex flex-col items-center gap-3">

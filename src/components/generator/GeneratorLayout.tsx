@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ImageUploader } from './ImageUploader';
 import { MonitorFrame } from './MonitorFrame';
 import { MonitorFramePreview } from './MonitorFramePreview';
@@ -9,26 +8,11 @@ import { ColorPicker } from './ColorPicker';
 import { ExportControls } from './ExportControls';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageExport } from '@/hooks/useImageExport';
-import { Button } from '@/components/ui/button';
-import { LogOut } from 'lucide-react';
+import { Header } from '@/components/shared/Header';
 
 export function GeneratorLayout() {
-  const router = useRouter();
   const exportRef = useRef<HTMLDivElement>(null);
   const [backgroundColor, setBackgroundColor] = useState('#735AC2');
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push('/login');
-      router.refresh();
-    } catch (error) {
-      console.error('Logout failed:', error);
-      setIsLoggingOut(false);
-    }
-  };
 
   const { image, isLoading, error: uploadError, handleFileSelect, clearImage } = useImageUpload();
   const { exportAsPng, exportAsWebp, isExporting, error: exportError } = useImageExport(exportRef);
@@ -57,28 +41,7 @@ export function GeneratorLayout() {
       </div>
 
       {/* Header */}
-      <div className="pt-5 px-3 max-w-[1750px] mx-auto">
-        <header className="w-full bg-card backdrop-blur-sm sticky top-0 z-50 px-6 h-16 flex items-center justify-between rounded-md">
-          <div className="flex items-center gap-3">
-            <span className="text-lg font-bold tracking-tight">FOUNTER</span>
-            <span className="text-muted-foreground">/</span>
-            <span className="text-sm text-muted-foreground uppercase tracking-wider">
-              Newsletter Generator
-            </span>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              {isLoggingOut ? 'Signing out...' : 'Sign out'}
-            </span>
-          </Button>
-        </header>
-      </div>
+      <Header />
 
 
       {/* Main Content */}

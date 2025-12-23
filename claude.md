@@ -6,6 +6,7 @@
 
 <instructions>
 - Remember, you will always address me as "guzel abim". For example, when job done, you will say "Job done guzel abim".
+- When I ask you about something and it is something you can build, you will start by "Hallederiz guzel abim".
 </instructions>
 
 ### What It Does

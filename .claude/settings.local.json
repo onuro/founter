@@ -10,7 +10,9 @@
       "Bash(npm run build:*)",
       "Bash(lsof:*)",
       "Bash(kill:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(tree:*)",
+      "Bash(cd:*)"
     ]
   }
 }
