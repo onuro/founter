@@ -3,20 +3,33 @@
 import { useRef, useState } from 'react';
 import { ImageUploader } from './ImageUploader';
 import { MonitorFrame } from './MonitorFrame';
+import { MonitorFramePreview } from './MonitorFramePreview';
 import { ColorPicker } from './ColorPicker';
 import { ExportControls } from './ExportControls';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageExport } from '@/hooks/useImageExport';
 
 export function GeneratorLayout() {
-  const previewRef = useRef<HTMLDivElement>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
   const [backgroundColor, setBackgroundColor] = useState('#735AC2');
 
   const { image, isLoading, error: uploadError, handleFileSelect, clearImage } = useImageUpload();
-  const { exportAsPng, exportAsWebp, isExporting, error: exportError } = useImageExport(previewRef);
+  const { exportAsPng, exportAsWebp, isExporting, error: exportError } = useImageExport(exportRef);
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-neutral-100">
+    <div className="min-h-screen bg-neutral-950 text-neutral-100 relative">
+      {/* Hidden Export Target - fixed 1440x900, wrapped in overflow-hidden container */}
+      <div className="fixed top-0 left-0 w-px h-px overflow-hidden" aria-hidden="true">
+        <div
+          ref={exportRef}
+          className="w-[1440px] h-[900px]"
+          style={{ backgroundColor }}
+        >
+          <MonitorFrame screenshotUrl={image?.dataUrl} />
+        </div>
+      </div>
+
+      {/* Visible Content */}
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <header className="text-center mb-12">
@@ -27,25 +40,21 @@ export function GeneratorLayout() {
         </header>
 
         <div className="grid lg:grid-cols-[1fr_380px] gap-8 items-start">
-          {/* Preview Section */}
+          {/* Preview Section - Fully Responsive */}
           <div className="space-y-4">
             <h2 className="text-sm font-medium text-neutral-400 uppercase tracking-wider">
               Preview
             </h2>
-            <div className="overflow-auto bg-neutral-900/50 rounded-xl border border-neutral-800">
-              <div className="p-4 min-w-fit">
-                {/* Export Target - Fixed dimensions */}
-                <div
-                  ref={previewRef}
-                  className="w-[1440px] h-[900px] overflow-hidden transition-colors duration-300"
-                  style={{ backgroundColor }}
-                >
-                  <MonitorFrame screenshotUrl={image?.dataUrl} />
-                </div>
+            <div className="w-full aspect-[1440/900] bg-neutral-900/50 rounded-xl border border-neutral-800 overflow-hidden">
+              <div
+                className="w-full h-full transition-colors duration-300"
+                style={{ backgroundColor }}
+              >
+                <MonitorFramePreview screenshotUrl={image?.dataUrl} />
               </div>
             </div>
             <p className="text-xs text-neutral-500 text-center">
-              Scroll to see the full preview. Export will be 1440x900px.
+              Export will be 1440x900px at 2x resolution.
             </p>
           </div>
 
