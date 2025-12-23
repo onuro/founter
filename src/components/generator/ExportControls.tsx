@@ -5,14 +5,16 @@ import { Download, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 interface ExportControlsProps {
-  onExportPng: () => void;
-  onExportWebp: (quality: number) => void;
+  onExportPng: (filename: string, pixelRatio: number) => void;
+  onExportWebp: (quality: number, filename: string, pixelRatio: number) => void;
   isExporting: boolean;
   disabled?: boolean;
   error?: string | null;
+  filename?: string;
 }
 
 export function ExportControls({
@@ -21,15 +23,21 @@ export function ExportControls({
   isExporting,
   disabled,
   error,
+  filename = 'newsletter-image',
 }: ExportControlsProps) {
   const [format, setFormat] = useState<'png' | 'webp'>('png');
   const [quality, setQuality] = useState(0.9);
+  const [is2x, setIs2x] = useState(false);
+
+  const pixelRatio = is2x ? 2 : 1;
+  const outputWidth = 1440 * pixelRatio;
+  const outputHeight = 900 * pixelRatio;
 
   const handleExport = () => {
     if (format === 'png') {
-      onExportPng();
+      onExportPng(filename, pixelRatio);
     } else {
-      onExportWebp(quality);
+      onExportWebp(quality, filename, pixelRatio);
     }
   };
 
@@ -39,30 +47,14 @@ export function ExportControls({
         <Download className="h-5 w-5 text-muted-foreground" />
         <CardTitle>Export</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {/* Format Selection */}
-        <div className="flex gap-2">
-          <Button
-            variant="secondary"
-            onClick={() => setFormat('png')}
-            className={cn(
-              "flex-1",
-              format === 'png' && "bg-white text-black hover:bg-white/90"
-            )}
-          >
-            PNG
-          </Button>
-          <Button
-            variant="secondary"
-            onClick={() => setFormat('webp')}
-            className={cn(
-              "flex-1",
-              format === 'webp' && "bg-white text-black hover:bg-white/90"
-            )}
-          >
-            WebP
-          </Button>
-        </div>
+        <Tabs value={format} onValueChange={(v) => setFormat(v as 'png' | 'webp')}>
+          <TabsList>
+            <TabsTrigger value="png">PNG</TabsTrigger>
+            <TabsTrigger value="webp">WebP</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {/* Quality Slider (WebP only) */}
         {format === 'webp' && (
@@ -81,6 +73,16 @@ export function ExportControls({
             />
           </div>
         )}
+
+        {/* Resolution Toggle */}
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Resolution</span>
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-mono ${!is2x ? 'text-foreground' : 'text-muted-foreground'}`}>1x</span>
+            <Switch checked={is2x} onCheckedChange={setIs2x} />
+            <span className={`text-sm font-mono ${is2x ? 'text-foreground' : 'text-muted-foreground'}`}>2x</span>
+          </div>
+        </div>
 
         {/* Download Button */}
         <Button
@@ -107,7 +109,7 @@ export function ExportControls({
         )}
 
         <p className="text-xs text-muted-foreground text-center">
-          Output: 1440 x 900px @ 2x resolution
+          Output: {outputWidth} x {outputHeight}px
         </p>
       </CardContent>
     </Card>

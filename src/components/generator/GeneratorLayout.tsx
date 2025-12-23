@@ -33,6 +33,16 @@ export function GeneratorLayout() {
   const { image, isLoading, error: uploadError, handleFileSelect, clearImage } = useImageUpload();
   const { exportAsPng, exportAsWebp, isExporting, error: exportError } = useImageExport(exportRef);
 
+  // Extract filename without extension from the uploaded image
+  const getFilenameWithoutExtension = (filename: string) => {
+    const lastDotIndex = filename.lastIndexOf('.');
+    return lastDotIndex > 0 ? filename.substring(0, lastDotIndex) : filename;
+  };
+
+  const exportFilename = image?.file.name
+    ? getFilenameWithoutExtension(image.file.name)
+    : 'newsletter-image';
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Hidden Export Target - fixed 1440x900, wrapped in overflow-hidden container */}
@@ -47,8 +57,8 @@ export function GeneratorLayout() {
       </div>
 
       {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-[1750px] mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="pt-5 px-3 max-w-[1750px] mx-auto">
+        <header className="w-full bg-card backdrop-blur-sm sticky top-0 z-50 px-6 h-16 flex items-center justify-between rounded-md">
           <div className="flex items-center gap-3">
             <span className="text-lg font-bold tracking-tight">FOUNTER</span>
             <span className="text-muted-foreground">/</span>
@@ -67,8 +77,9 @@ export function GeneratorLayout() {
               {isLoggingOut ? 'Signing out...' : 'Sign out'}
             </span>
           </Button>
-        </div>
-      </header>
+        </header>
+      </div>
+
 
       {/* Main Content */}
       <main className="max-w-[1750px] mx-auto px-4 py-8">
@@ -88,7 +99,7 @@ export function GeneratorLayout() {
                 Preview
               </span>
               <span className="text-xs text-muted-foreground">
-                Export: 1440x900 @ 2x
+                Base: 1440x900
               </span>
             </div>
           </div>
@@ -109,11 +120,12 @@ export function GeneratorLayout() {
             />
 
             <ExportControls
-              onExportPng={() => exportAsPng()}
-              onExportWebp={(quality) => exportAsWebp(quality)}
+              onExportPng={(filename, pixelRatio) => exportAsPng(filename, pixelRatio)}
+              onExportWebp={(quality, filename, pixelRatio) => exportAsWebp(quality, filename, pixelRatio)}
               isExporting={isExporting}
               disabled={!image}
               error={exportError}
+              filename={exportFilename}
             />
           </div>
         </div>

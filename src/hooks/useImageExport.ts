@@ -14,7 +14,7 @@ export function useImageExport(elementRef: RefObject<HTMLDivElement | null>) {
     link.click();
   }, []);
 
-  const exportAsPng = useCallback(async (filename = 'newsletter-image') => {
+  const exportAsPng = useCallback(async (filename = 'newsletter-image', pixelRatio = 1) => {
     if (!elementRef.current) return;
 
     setIsExporting(true);
@@ -22,7 +22,7 @@ export function useImageExport(elementRef: RefObject<HTMLDivElement | null>) {
 
     try {
       const dataUrl = await toPng(elementRef.current, {
-        pixelRatio: 2,
+        pixelRatio,
         quality: 1,
       });
       downloadFile(dataUrl, `${filename}.png`);
@@ -34,7 +34,7 @@ export function useImageExport(elementRef: RefObject<HTMLDivElement | null>) {
     }
   }, [elementRef, downloadFile]);
 
-  const exportAsWebp = useCallback(async (quality = 0.9, filename = 'newsletter-image') => {
+  const exportAsWebp = useCallback(async (quality = 0.9, filename = 'newsletter-image', pixelRatio = 1) => {
     if (!elementRef.current) return;
 
     setIsExporting(true);
@@ -42,7 +42,7 @@ export function useImageExport(elementRef: RefObject<HTMLDivElement | null>) {
 
     try {
       const blob = await toBlob(elementRef.current, {
-        pixelRatio: 2,
+        pixelRatio,
       });
 
       if (!blob) {
