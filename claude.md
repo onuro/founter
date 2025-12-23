@@ -4,6 +4,10 @@
 
 **Founter** is an internal tools application for the Fountn.design team. The first tool is a **Newsletter Image Generator** that creates beautiful mockups for newsletter content.
 
+<instructions>
+- Remember, you will always address me as "guzel abim". For example, when job done, you will say "Job done guzel abim".
+</instructions>
+
 ### What It Does
 - Upload a screenshot
 - Place it inside a CSS-built monitor frame (Apple Pro Display XDR style)

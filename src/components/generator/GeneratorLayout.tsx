@@ -44,7 +44,7 @@ export function GeneratorLayout() {
     : 'newsletter-image';
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen p-4 bg-background text-foreground">
       {/* Hidden Export Target - fixed 1440x900, wrapped in overflow-hidden container */}
       <div className="fixed top-0 left-0 w-px h-px overflow-hidden" aria-hidden="true">
         <div
@@ -83,26 +83,7 @@ export function GeneratorLayout() {
 
       {/* Main Content */}
       <main className="max-w-[1750px] mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-[1fr_400px] gap-8 items-start">
-          {/* Preview Section */}
-          <div className="space-y-4">
-            <div className="w-full aspect-[1440/900] bg-card rounded-md overflow-hidden">
-              <div
-                className="w-full h-full transition-colors duration-300"
-                style={{ backgroundColor }}
-              >
-                <MonitorFramePreview screenshotUrl={image?.dataUrl} />
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Preview
-              </span>
-              <span className="text-xs text-muted-foreground">
-                Base: 1440x900
-              </span>
-            </div>
-          </div>
+        <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
 
           {/* Controls Sidebar */}
           <div className="space-y-4">
@@ -127,6 +108,26 @@ export function GeneratorLayout() {
               error={exportError}
               filename={exportFilename}
             />
+          </div>
+
+          {/* Preview Section */}
+          <div className="space-y-4">
+            <div className="w-full aspect-[1440/900] bg-card rounded-md overflow-hidden">
+              <div
+                className="w-full h-full transition-colors duration-300"
+                style={{ backgroundColor }}
+              >
+                <MonitorFramePreview screenshotUrl={image?.dataUrl} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Preview
+              </span>
+              <span className="text-xs text-muted-foreground">
+                Base: 1440x900
+              </span>
+            </div>
           </div>
         </div>
       </main>
