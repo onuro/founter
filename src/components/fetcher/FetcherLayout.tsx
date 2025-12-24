@@ -5,14 +5,17 @@ import { Header } from '@/components/shared/Header';
 import { URLInput } from './URLInput';
 import { ImageGrid } from './ImageGrid';
 import { CrawlOptionsSheet } from './CrawlOptionsSheet';
+import { PresetsSheet } from './PresetsSheet';
 import { useCrawl } from '@/hooks/useCrawl';
 import { useHistory } from '@/hooks/useHistory';
+import { usePresets } from '@/hooks/usePresets';
 import { HistorySheet } from '@/components/ui/history-sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, History, Settings, ImageIcon, FileText } from 'lucide-react';
+import { Loader2, History, Settings, ImageIcon, FileText, Bookmark } from 'lucide-react';
 import { ScrollOptions, DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
 import { toast } from 'sonner';
+import type { SitePreset } from '@/types/preset';
 
 export function FetcherLayout() {
   const { images, isLoading, error, crawledUrl, scrollUsed, crawlUrl, clearResults } = useCrawl();
@@ -20,9 +23,19 @@ export function FetcherLayout() {
     key: 'fetcher-history',
     maxItems: 20,
   });
+  const {
+    presets,
+    isLoading: presetsLoading,
+    createPreset,
+    updatePreset,
+    deletePreset,
+  } = usePresets('IMAGE');
+
   const [historyOpen, setHistoryOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
+  const [presetsOpen, setPresetsOpen] = useState(false);
   const [scrollOptions, setScrollOptions] = useState<ScrollOptions>(DEFAULT_SCROLL_OPTIONS);
+  const [inputUrl, setInputUrl] = useState('');
   const lastCrawledUrl = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState('images');
 
@@ -60,6 +73,17 @@ export function FetcherLayout() {
     crawlUrl(url, scrollOptions);
   };
 
+  const handlePresetSelect = (preset: SitePreset) => {
+    setInputUrl(preset.url);
+    setScrollOptions(preset.crawlOptions.scroll);
+    toast.info(`Loaded preset: ${preset.label}`);
+  };
+
+  const handleClearResults = () => {
+    setInputUrl('');
+    clearResults();
+  };
+
   return (
     <div className="min-h-screen p-4 bg-background text-foreground">
       <Header />
@@ -73,6 +97,15 @@ export function FetcherLayout() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setPresetsOpen(true)}
+              title="Site presets"
+              className="cursor-pointer"
+            >
+              <Bookmark className="w-4 h-4" />
+            </Button>
             <Button
               variant="outline"
               size="icon"
@@ -108,8 +141,10 @@ export function FetcherLayout() {
 
           <TabsContent value="images" className="space-y-6">
             <URLInput
+              value={inputUrl}
+              onChange={setInputUrl}
               onSubmit={handleCrawl}
-              onClear={clearResults}
+              onClear={handleClearResults}
               isLoading={isLoading}
               hasResults={images.length > 0}
             />
@@ -172,6 +207,17 @@ export function FetcherLayout() {
         onOpenChange={setOptionsOpen}
         options={scrollOptions}
         onOptionsChange={setScrollOptions}
+      />
+
+      <PresetsSheet
+        open={presetsOpen}
+        onOpenChange={setPresetsOpen}
+        presets={presets}
+        isLoading={presetsLoading}
+        onPresetSelect={handlePresetSelect}
+        onPresetCreate={createPreset}
+        onPresetUpdate={updatePreset}
+        onPresetDelete={deletePreset}
       />
     </div>
   );
