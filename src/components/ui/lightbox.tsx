@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -78,7 +78,19 @@ export function Lightbox({
     setIsFullscreen(prev => !prev);
   }, []);
 
-  // Keyboard navigation
+  // Use refs to keep keyboard handler stable (no re-attachment on navigation)
+  const goToPrevRef = useRef(goToPrev);
+  const goToNextRef = useRef(goToNext);
+  const toggleFullscreenRef = useRef(toggleFullscreen);
+
+  // Keep refs updated
+  useEffect(() => {
+    goToPrevRef.current = goToPrev;
+    goToNextRef.current = goToNext;
+    toggleFullscreenRef.current = toggleFullscreen;
+  });
+
+  // Keyboard navigation - only re-attaches when open state changes
   useEffect(() => {
     if (!open) return;
 
@@ -86,23 +98,23 @@ export function Lightbox({
       switch (e.key) {
         case 'ArrowLeft':
           e.preventDefault();
-          goToPrev();
+          goToPrevRef.current();
           break;
         case 'ArrowRight':
           e.preventDefault();
-          goToNext();
+          goToNextRef.current();
           break;
         case 'f':
         case 'F':
           e.preventDefault();
-          toggleFullscreen();
+          toggleFullscreenRef.current();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [open, goToPrev, goToNext, toggleFullscreen]);
+  }, [open]);
 
   const handleClose = useCallback(
     (open: boolean) => {
@@ -185,7 +197,7 @@ export function Lightbox({
               href={image.src}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-full max-w-3xl flex items-start justify-start"
+              className="w-full h-full max-w-[1400px] flex items-start justify-start"
             >
               <img
                 src={image.src}

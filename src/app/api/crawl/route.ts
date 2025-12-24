@@ -265,6 +265,8 @@ function isSmallUtilityImage(url: string): boolean {
 
 function extractImagesFromHtml(html: string): ExtractedImage[] {
   const images: ExtractedImage[] = [];
+  // Use Set for O(1) deduplication instead of O(n) .some() check
+  const seenUrls = new Set<string>();
 
   // Match all img tags
   const imgTagRegex = /<img[^>]*>/gi;
@@ -340,9 +342,10 @@ function extractImagesFromHtml(html: string): ExtractedImage[] {
       continue;
     }
 
-    // Get clean URL (extract original from CDN + strip query params) and deduplicate
+    // Get clean URL (extract original from CDN + strip query params) and deduplicate with O(1) Set lookup
     const cleanSrc = getCleanImageUrl(finalSrc);
-    if (!images.some(img => img.src === cleanSrc)) {
+    if (!seenUrls.has(cleanSrc)) {
+      seenUrls.add(cleanSrc);
       images.push({
         src: cleanSrc,
         alt,

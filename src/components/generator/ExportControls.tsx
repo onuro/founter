@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
+import type { ExportProgress } from '@/hooks/useImageExport';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -12,6 +13,7 @@ interface ExportControlsProps {
   onExportPng: (filename: string, pixelRatio: number) => void;
   onExportWebp: (quality: number, filename: string, pixelRatio: number) => void;
   isExporting: boolean;
+  exportProgress?: ExportProgress;
   disabled?: boolean;
   error?: string | null;
   filename?: string;
@@ -21,6 +23,7 @@ export function ExportControls({
   onExportPng,
   onExportWebp,
   isExporting,
+  exportProgress,
   disabled,
   error,
   filename = 'newsletter-image',
@@ -84,25 +87,44 @@ export function ExportControls({
           </div>
         </div>
 
-        {/* Download Button */}
-        <Button
-          className="w-full"
-          size="lg"
-          onClick={handleExport}
-          disabled={disabled || isExporting}
-        >
-          {isExporting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Exporting...
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4" />
-              Download {format.toUpperCase()}
-            </>
+        {/* Download Button with Progress */}
+        <div className="space-y-2">
+          <Button
+            className="w-full relative overflow-hidden"
+            size="lg"
+            onClick={handleExport}
+            disabled={disabled || isExporting}
+          >
+            {/* Progress bar background */}
+            {isExporting && exportProgress && (
+              <div
+                className="absolute inset-0 bg-primary/20 transition-all duration-300"
+                style={{ width: `${exportProgress.progress}%` }}
+              />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              {isExporting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {exportProgress?.stage === 'capturing' && 'Capturing...'}
+                  {exportProgress?.stage === 'converting' && 'Converting...'}
+                  {exportProgress?.stage === 'complete' && 'Done!'}
+                  {!exportProgress?.stage && 'Exporting...'}
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  Download {format.toUpperCase()}
+                </>
+              )}
+            </span>
+          </Button>
+          {isExporting && exportProgress && (
+            <p className="text-xs text-muted-foreground text-center">
+              {Math.round(exportProgress.progress)}% complete
+            </p>
           )}
-        </Button>
+        </div>
 
         {error && (
           <p className="text-sm text-destructive text-center">{error}</p>

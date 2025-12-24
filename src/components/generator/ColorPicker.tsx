@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useMemo, memo } from 'react';
 import { Palette } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,6 +8,29 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PREDEFINED_COLORS, isValidHex, normalizeHex } from '@/lib/colors';
 import { cn } from '@/lib/utils';
+
+interface ColorButtonProps {
+  color: { hex: string; name: string };
+  isSelected: boolean;
+  onClick: (hex: string) => void;
+}
+
+// Memoized color button to prevent re-renders when typing in hex input
+const ColorButton = memo(function ColorButton({ color, isSelected, onClick }: ColorButtonProps) {
+  return (
+    <button
+      onClick={() => onClick(color.hex)}
+      className={cn(
+        'aspect-square rounded-sm transition-all hover:scale-110',
+        isSelected
+          ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-105'
+          : 'hover:ring-1 hover:ring-muted-foreground/30'
+      )}
+      style={{ backgroundColor: color.hex }}
+      title={color.name}
+    />
+  );
+});
 
 interface ColorPickerProps {
   selected: string;
@@ -18,7 +41,7 @@ export function ColorPicker({ selected, onChange }: ColorPickerProps) {
   const [customHex, setCustomHex] = useState('');
   const [hexError, setHexError] = useState<string | null>(null);
 
-  const handleCustomHexApply = () => {
+  const handleCustomHexApply = useCallback(() => {
     const normalized = normalizeHex(customHex);
     if (isValidHex(normalized)) {
       onChange(normalized);
@@ -26,12 +49,18 @@ export function ColorPicker({ selected, onChange }: ColorPickerProps) {
     } else {
       setHexError('Invalid hex color');
     }
-  };
+  }, [customHex, onChange]);
 
-  const handleCustomHexChange = (value: string) => {
+  const handleCustomHexChange = useCallback((value: string) => {
     setCustomHex(value);
     setHexError(null);
-  };
+  }, []);
+
+  // Memoize the preview color to avoid recalculating on every render
+  const previewColor = useMemo(() => {
+    const normalized = normalizeHex(customHex);
+    return isValidHex(normalized) ? normalized : selected;
+  }, [customHex, selected]);
 
   return (
     <Card>
@@ -49,17 +78,11 @@ export function ColorPicker({ selected, onChange }: ColorPickerProps) {
           <TabsContent value="presets" className="mt-0">
             <div className="grid grid-cols-8 gap-3">
               {PREDEFINED_COLORS.map((color) => (
-                <button
+                <ColorButton
                   key={color.hex}
-                  onClick={() => onChange(color.hex)}
-                  className={cn(
-                    'aspect-square rounded-sm transition-all hover:scale-110',
-                    selected === color.hex
-                      ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-105'
-                      : 'hover:ring-1 hover:ring-muted-foreground/30'
-                  )}
-                  style={{ backgroundColor: color.hex }}
-                  title={color.name}
+                  color={color}
+                  isSelected={selected === color.hex}
+                  onClick={onChange}
                 />
               ))}
             </div>
@@ -82,7 +105,7 @@ export function ColorPicker({ selected, onChange }: ColorPickerProps) {
             <div className="flex items-center gap-4">
               <div
                 className="w-14 h-14 rounded-sm"
-                style={{ backgroundColor: isValidHex(normalizeHex(customHex)) ? normalizeHex(customHex) : selected }}
+                style={{ backgroundColor: previewColor }}
               />
               <div className="text-sm">
                 <p className="text-muted-foreground">Current</p>

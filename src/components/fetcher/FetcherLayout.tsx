@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Header } from '@/components/shared/Header';
 import { URLInput } from './URLInput';
 import { ImageGrid } from './ImageGrid';
@@ -61,28 +61,33 @@ export function FetcherLayout() {
     }
   }, [crawledUrl, images.length, addItem, scrollUsed]);
 
-  const handleHistoryItemClick = (item: { url: string }) => {
+  const handleHistoryItemClick = useCallback((item: { url: string }) => {
     crawlUrl(item.url, scrollOptions);
-  };
+  }, [crawlUrl, scrollOptions]);
 
-  const handleHistoryItemRemove = (item: { id: string }) => {
+  const handleHistoryItemRemove = useCallback((item: { id: string }) => {
     removeItem(item.id);
-  };
+  }, [removeItem]);
 
-  const handleCrawl = (url: string) => {
+  const handleCrawl = useCallback((url: string) => {
     crawlUrl(url, scrollOptions);
-  };
+  }, [crawlUrl, scrollOptions]);
 
-  const handlePresetSelect = (preset: SitePreset) => {
+  const handlePresetSelect = useCallback((preset: SitePreset) => {
     setInputUrl(preset.url);
     setScrollOptions(preset.crawlOptions.scroll);
     toast.info(`Loaded preset: ${preset.label}`);
-  };
+  }, []);
 
-  const handleClearResults = () => {
+  const handleClearResults = useCallback(() => {
     setInputUrl('');
     clearResults();
-  };
+  }, [clearResults]);
+
+  // Memoize sheet toggle callbacks to prevent re-renders
+  const openHistory = useCallback(() => setHistoryOpen(true), []);
+  const openOptions = useCallback(() => setOptionsOpen(true), []);
+  const openPresets = useCallback(() => setPresetsOpen(true), []);
 
   return (
     <div className="min-h-screen p-4 bg-background text-foreground">
@@ -100,7 +105,7 @@ export function FetcherLayout() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setPresetsOpen(true)}
+              onClick={openPresets}
               title="Site presets"
               className="cursor-pointer"
             >
@@ -109,7 +114,7 @@ export function FetcherLayout() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setOptionsOpen(true)}
+              onClick={openOptions}
               title="Crawl options"
               className="cursor-pointer"
             >
@@ -118,7 +123,7 @@ export function FetcherLayout() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setHistoryOpen(true)}
+              onClick={openHistory}
               title="View history"
               className="cursor-pointer"
             >

@@ -28,7 +28,7 @@ export function CrawlOptionsSheet({
 }: CrawlOptionsSheetProps) {
   const handleScrollCountChange = (value: string) => {
     const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= 1 && num <= 10) {
+    if (!isNaN(num) && num >= 1 && num <= 30) {
       onOptionsChange({ ...options, scrollCount: num });
     }
   };
@@ -71,12 +71,12 @@ export function CrawlOptionsSheet({
           <div className="space-y-2">
             <label className="text-sm font-medium">Scroll count</label>
             <p className="text-xs text-muted-foreground">
-              Number of scroll actions (1-10)
+              Number of scroll actions (1-30)
             </p>
             <Input
               type="number"
               min={1}
-              max={10}
+              max={30}
               value={options.scrollCount}
               onChange={(e) => handleScrollCountChange(e.target.value)}
               disabled={!options.enabled}

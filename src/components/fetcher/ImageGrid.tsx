@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { ExtractedImage } from '@/types/crawl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbox, useLightbox } from '@/components/ui/lightbox';
-import { Copy, Check, ExternalLink, ImageIcon, ChevronDown } from 'lucide-react';
-
-const IMAGES_PER_PAGE = 30;
+import { Copy, Check, ExternalLink, ImageIcon } from 'lucide-react';
 
 interface ImageGridProps {
   images: ExtractedImage[];
@@ -17,8 +15,8 @@ interface ImageGridProps {
 
 export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
-  const [displayCount, setDisplayCount] = useState(IMAGES_PER_PAGE);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
+
   const {
     selectedImage,
     isOpen,
@@ -30,19 +28,17 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
   } = useLightbox();
 
   // Convert images to LightboxImage format
-  const allLightboxImages = images.map(img => ({ src: img.src, alt: img.alt }));
+  const allLightboxImages = useMemo(
+    () => images.map(img => ({ src: img.src, alt: img.alt })),
+    [images]
+  );
 
-  // Reset display count when images change (new crawl)
+  // Reset failed images when images change (new crawl)
   useEffect(() => {
-    setDisplayCount(IMAGES_PER_PAGE);
     setFailedImages(new Set());
   }, [images]);
 
-  const displayedImages = images.slice(0, displayCount);
-  const hasMore = displayCount < images.length;
-  const remainingCount = images.length - displayCount;
-
-  const copyToClipboard = async (src: string, index: number) => {
+  const copyToClipboard = useCallback(async (src: string, index: number) => {
     try {
       await navigator.clipboard.writeText(src);
       setCopiedIndex(index);
@@ -50,7 +46,11 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
-  };
+  }, []);
+
+  const handleImageError = useCallback((src: string) => {
+    setFailedImages(prev => new Set(prev).add(src));
+  }, []);
 
   if (images.length === 0) {
     return null;
@@ -79,14 +79,15 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-            {displayedImages.map((image, index) => {
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 auto-rows-fr">
+            {images.map((image, index) => {
               const isFailed = failedImages.has(image.src);
 
               return (
                 <div
                   key={`${image.src}-${index}`}
-                  className="group relative aspect-square bg-neutral-900 rounded-md overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-colors"
+                  className="group relative bg-neutral-900 rounded-md overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-colors"
+                  style={{ aspectRatio: '1 / 1' }}
                 >
                   {/* Thumbnail */}
                   <button
@@ -108,9 +109,7 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
                         fill
                         className="object-cover object-top transition-transform group-hover:scale-105"
                         sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                        onError={() => {
-                          setFailedImages(prev => new Set(prev).add(image.src));
-                        }}
+                        onError={() => handleImageError(image.src)}
                       />
                     )}
                   </button>
@@ -143,20 +142,6 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
               );
             })}
           </div>
-
-          {/* Load More Button */}
-          {hasMore && (
-            <div className="mt-6 flex justify-center">
-              <Button
-                variant="outline"
-                onClick={() => setDisplayCount(prev => prev + IMAGES_PER_PAGE)}
-                className="cursor-pointer"
-              >
-                <ChevronDown className="w-4 h-4 mr-2" />
-                Load More ({remainingCount} remaining)
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
 

@@ -86,7 +86,7 @@ export function PresetFormDialog({
 
   const handleScrollCountChange = (value: string) => {
     const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= 1 && num <= 10) {
+    if (!isNaN(num) && num >= 1 && num <= 30) {
       setCrawlOptions({
         ...crawlOptions,
         scroll: { ...crawlOptions.scroll, scrollCount: num },
@@ -160,11 +160,11 @@ export function PresetFormDialog({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Scroll count (1-10)</label>
+              <label className="text-sm font-medium">Scroll count (1-30)</label>
               <Input
                 type="number"
                 min={1}
-                max={10}
+                max={30}
                 value={crawlOptions.scroll.scrollCount}
                 onChange={(e) => handleScrollCountChange(e.target.value)}
                 disabled={!crawlOptions.scroll.enabled || isSubmitting}

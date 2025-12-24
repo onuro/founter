@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface HistoryItem {
   id: string;
@@ -37,15 +37,32 @@ export function useHistory({ key, maxItems = 20 }: UseHistoryOptions) {
     setIsLoaded(true);
   }, [key]);
 
-  // Save to localStorage whenever items change (after initial load)
+  // Debounce ref to avoid blocking main thread with rapid localStorage writes
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Save to localStorage whenever items change (after initial load) - debounced
   useEffect(() => {
     if (isLoaded) {
-      try {
-        localStorage.setItem(key, JSON.stringify(items));
-      } catch (err) {
-        console.error('Failed to save history to localStorage:', err);
+      // Clear any pending save
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
       }
+
+      // Debounce localStorage write by 500ms
+      saveTimeoutRef.current = setTimeout(() => {
+        try {
+          localStorage.setItem(key, JSON.stringify(items));
+        } catch (err) {
+          console.error('Failed to save history to localStorage:', err);
+        }
+      }, 500);
     }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [items, key, isLoaded]);
 
   const addItem = useCallback((url: string, label?: string, metadata?: Record<string, unknown>) => {

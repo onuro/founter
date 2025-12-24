@@ -15,7 +15,7 @@ export function GeneratorLayout() {
   const [backgroundColor, setBackgroundColor] = useState('#735AC2');
 
   const { image, isLoading, error: uploadError, handleFileSelect, clearImage } = useImageUpload();
-  const { exportAsPng, exportAsWebp, isExporting, error: exportError } = useImageExport(exportRef);
+  const { exportAsPng, exportAsWebp, isExporting, exportProgress, error: exportError } = useImageExport(exportRef);
 
   // Extract filename without extension from the uploaded image
   const getFilenameWithoutExtension = (filename: string) => {
@@ -67,6 +67,7 @@ export function GeneratorLayout() {
               onExportPng={(filename, pixelRatio) => exportAsPng(filename, pixelRatio)}
               onExportWebp={(quality, filename, pixelRatio) => exportAsWebp(quality, filename, pixelRatio)}
               isExporting={isExporting}
+              exportProgress={exportProgress}
               disabled={!image}
               error={exportError}
               filename={exportFilename}

@@ -120,7 +120,7 @@
 
   /* Borders - very subtle */
   --border: oklch(1 0 0 / 6%);
-  --input: oklch(0.14 0 0);
+  --input: oklch(0.22 0 0);
   /* solid dark input bg */
   --ring: oklch(0.93 0.21 109 / 50%);
   /* yellow focus ring */
