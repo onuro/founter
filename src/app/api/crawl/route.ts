@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { CrawlResponse, ExtractedImage } from '@/types/crawl';
+import { CrawlResponse, ExtractedImage, ScrollOptions } from '@/types/crawl';
 
 const CRAWL4AI_URL = 'https://krawl.reaktorstudios.com/crawl';
 
@@ -302,7 +302,7 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { url } = body;
+    const { url, scrollOptions } = body as { url: string; scrollOptions?: ScrollOptions };
 
     if (!url) {
       clearTimeout(timeoutId);
@@ -310,6 +310,29 @@ export async function POST(request: Request) {
         { success: false, error: 'URL is required' },
         { status: 400 }
       );
+    }
+
+    // Build crawler config with optional scroll settings
+    const crawlerConfig: Record<string, unknown> = {
+      wait_until: 'networkidle',
+      page_timeout: 60000,
+      wait_for_images: true,
+    };
+
+    // Add scroll options if enabled - use js_code for scrolling
+    if (scrollOptions?.enabled) {
+      // Generate JavaScript that scrolls the page multiple times
+      const scrollScript = `
+        (async () => {
+          for (let i = 0; i < ${scrollOptions.scrollCount}; i++) {
+            window.scrollTo(0, document.body.scrollHeight);
+            await new Promise(r => setTimeout(r, ${scrollOptions.scrollDelay}));
+          }
+        })();
+      `;
+      crawlerConfig.js_code = scrollScript;
+      // Add extra wait time to allow images to load after scrolling
+      crawlerConfig.delay_before_return_html = (scrollOptions.scrollCount * scrollOptions.scrollDelay) / 1000 + 1;
     }
 
     const crawlResponse = await fetch(CRAWL4AI_URL, {
@@ -320,11 +343,7 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         urls: [url],
-        crawler_config: {
-          wait_until: 'networkidle',
-          page_timeout: 60000,
-          wait_for_images: true,
-        },
+        crawler_config: crawlerConfig,
         browser_config: {
           headless: true,
           java_script_enabled: true,
@@ -422,6 +441,10 @@ export async function POST(request: Request) {
         url: result.url,
         images,
         totalImages: images.length,
+        scrollUsed: scrollOptions?.enabled ? {
+          scrollCount: scrollOptions.scrollCount,
+          scrollDelay: scrollOptions.scrollDelay,
+        } : null,
       },
     });
   } catch (error) {

@@ -1,12 +1,18 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { ExtractedImage } from '@/types/crawl';
+import { ExtractedImage, ScrollOptions } from '@/types/crawl';
+
+interface ScrollUsedInfo {
+  scrollCount: number;
+  scrollDelay: number;
+}
 
 interface CrawlResult {
   url: string;
   images: ExtractedImage[];
   totalImages: number;
+  scrollUsed: ScrollUsedInfo | null;
 }
 
 export function useCrawl() {
@@ -14,18 +20,20 @@ export function useCrawl() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [crawledUrl, setCrawledUrl] = useState<string | null>(null);
+  const [scrollUsed, setScrollUsed] = useState<ScrollUsedInfo | null>(null);
 
-  const crawlUrl = useCallback(async (url: string) => {
+  const crawlUrl = useCallback(async (url: string, scrollOptions?: ScrollOptions) => {
     setIsLoading(true);
     setError(null);
     setImages([]);
     setCrawledUrl(null);
+    setScrollUsed(null);
 
     try {
       const response = await fetch('/api/crawl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, scrollOptions }),
       });
 
       const data = await response.json();
@@ -34,6 +42,7 @@ export function useCrawl() {
         const result: CrawlResult = data.data;
         setImages(result.images);
         setCrawledUrl(result.url);
+        setScrollUsed(result.scrollUsed);
       } else {
         setError(data.error || 'Failed to crawl the URL');
       }
@@ -48,6 +57,7 @@ export function useCrawl() {
     setImages([]);
     setError(null);
     setCrawledUrl(null);
+    setScrollUsed(null);
   }, []);
 
   return {
@@ -55,6 +65,7 @@ export function useCrawl() {
     isLoading,
     error,
     crawledUrl,
+    scrollUsed,
     crawlUrl,
     clearResults,
   };

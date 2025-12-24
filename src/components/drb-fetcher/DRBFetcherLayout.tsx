@@ -4,19 +4,24 @@ import { useState, useEffect, useRef } from 'react';
 import { Header } from '@/components/shared/Header';
 import { URLInput } from './URLInput';
 import { ImageGrid } from './ImageGrid';
+import { CrawlOptionsSheet } from './CrawlOptionsSheet';
 import { useCrawl } from '@/hooks/useCrawl';
 import { useHistory } from '@/hooks/useHistory';
 import { HistorySheet } from '@/components/ui/history-sheet';
 import { Button } from '@/components/ui/button';
-import { Loader2, History } from 'lucide-react';
+import { Loader2, History, Settings } from 'lucide-react';
+import { ScrollOptions, DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
+import { toast } from 'sonner';
 
 export function DRBFetcherLayout() {
-  const { images, isLoading, error, crawledUrl, crawlUrl, clearResults } = useCrawl();
+  const { images, isLoading, error, crawledUrl, scrollUsed, crawlUrl, clearResults } = useCrawl();
   const { items, addItem, removeItem, clearAll } = useHistory({
     key: 'drb-fetch-history',
     maxItems: 20,
   });
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
+  const [scrollOptions, setScrollOptions] = useState<ScrollOptions>(DEFAULT_SCROLL_OPTIONS);
   const lastCrawledUrl = useRef<string | null>(null);
 
   // Add to history when crawl succeeds
@@ -31,11 +36,26 @@ export function DRBFetcherLayout() {
         addItem(crawledUrl);
       }
       lastCrawledUrl.current = crawledUrl;
+
+      // Show toast with scroll info if scrolling was used
+      if (scrollUsed) {
+        toast.success(`Found ${images.length} images`, {
+          description: `Page was scrolled ${scrollUsed.scrollCount}x with ${scrollUsed.scrollDelay}ms delay`,
+        });
+      }
     }
-  }, [crawledUrl, images.length, addItem]);
+  }, [crawledUrl, images.length, addItem, scrollUsed]);
 
   const handleHistoryItemClick = (item: { url: string }) => {
-    crawlUrl(item.url);
+    crawlUrl(item.url, scrollOptions);
+  };
+
+  const handleHistoryItemRemove = (item: { id: string }) => {
+    removeItem(item.id);
+  };
+
+  const handleCrawl = (url: string) => {
+    crawlUrl(url, scrollOptions);
   };
 
   return (
@@ -50,20 +70,31 @@ export function DRBFetcherLayout() {
               Extract images from any webpage using Crawl4AI
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setHistoryOpen(true)}
-            title="View history"
-            className="cursor-pointer"
-          >
-            <History className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setOptionsOpen(true)}
+              title="Crawl options"
+              className="cursor-pointer"
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => setHistoryOpen(true)}
+              title="View history"
+              className="cursor-pointer"
+            >
+              <History className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
           <URLInput
-            onSubmit={crawlUrl}
+            onSubmit={handleCrawl}
             onClear={clearResults}
             isLoading={isLoading}
             hasResults={images.length > 0}
@@ -107,8 +138,15 @@ export function DRBFetcherLayout() {
         description="Your recent crawled URLs"
         items={items}
         onItemClick={handleHistoryItemClick}
-        onItemRemove={removeItem}
+        onItemRemove={handleHistoryItemRemove}
         onClearAll={clearAll}
+      />
+
+      <CrawlOptionsSheet
+        open={optionsOpen}
+        onOpenChange={setOptionsOpen}
+        options={scrollOptions}
+        onOptionsChange={setScrollOptions}
       />
     </div>
   );

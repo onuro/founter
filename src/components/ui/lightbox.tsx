@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, ExternalLink, Maximize2, Minimize2 } from 'lucide-react';
+import { Copy, Check, ExternalLink, Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export interface LightboxImage {
   src: string;
@@ -20,6 +20,12 @@ interface LightboxProps {
   image: LightboxImage | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Array of all images for gallery navigation */
+  images?: LightboxImage[];
+  /** Current image index in the gallery */
+  currentIndex?: number;
+  /** Callback when navigating to a different image */
+  onNavigate?: (index: number) => void;
   /** Show the image title in header. Default: true */
   showTitle?: boolean;
   /** Show the URL and action buttons in footer. Default: true */
@@ -38,6 +44,9 @@ export function Lightbox({
   image,
   open,
   onOpenChange,
+  images,
+  currentIndex,
+  onNavigate,
   showTitle = true,
   showFooter = true,
   showFullscreenToggle = true,
@@ -47,6 +56,53 @@ export function Lightbox({
 }: LightboxProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  // Gallery navigation
+  const hasGallery = images && images.length > 1 && currentIndex !== undefined && onNavigate;
+  const hasPrev = hasGallery && currentIndex > 0;
+  const hasNext = hasGallery && currentIndex < images.length - 1;
+
+  const goToPrev = useCallback(() => {
+    if (hasPrev && onNavigate && currentIndex !== undefined) {
+      onNavigate(currentIndex - 1);
+    }
+  }, [hasPrev, onNavigate, currentIndex]);
+
+  const goToNext = useCallback(() => {
+    if (hasNext && onNavigate && currentIndex !== undefined) {
+      onNavigate(currentIndex + 1);
+    }
+  }, [hasNext, onNavigate, currentIndex]);
+
+  const toggleFullscreen = useCallback(() => {
+    setIsFullscreen(prev => !prev);
+  }, []);
+
+  // Keyboard navigation
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      switch (e.key) {
+        case 'ArrowLeft':
+          e.preventDefault();
+          goToPrev();
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          goToNext();
+          break;
+        case 'f':
+        case 'F':
+          e.preventDefault();
+          toggleFullscreen();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [open, goToPrev, goToNext, toggleFullscreen]);
 
   const handleClose = useCallback(
     (open: boolean) => {
@@ -110,6 +166,20 @@ export function Lightbox({
         )}
 
         <div className="relative flex-1 min-h-0 bg-neutral-900 rounded-md flex items-center justify-center overflow-hidden">
+          {/* Previous Button */}
+          {hasPrev && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute left-2 z-10 bg-black/50 hover:bg-black/70 cursor-pointer"
+              onClick={goToPrev}
+              title="Previous image (←)"
+            >
+              <ChevronLeft className="w-6 h-6" />
+            </Button>
+          )}
+
+          {/* Image */}
           {isFullscreen ? (
             <a
               href={image.src}
@@ -132,6 +202,26 @@ export function Lightbox({
               className="object-contain max-w-full max-h-[60vh]"
               unoptimized
             />
+          )}
+
+          {/* Next Button */}
+          {hasNext && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className="absolute right-2 z-10 bg-black/50 hover:bg-black/70 cursor-pointer"
+              onClick={goToNext}
+              title="Next image (→)"
+            >
+              <ChevronRight className="w-6 h-6" />
+            </Button>
+          )}
+
+          {/* Image counter */}
+          {hasGallery && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 px-3 py-1 rounded-full text-xs text-white">
+              {currentIndex + 1} / {images.length}
+            </div>
           )}
         </div>
 
@@ -184,23 +274,41 @@ export function Lightbox({
   );
 }
 
-// Hook for easy lightbox state management
+// Hook for easy lightbox state management with gallery support
 export function useLightbox() {
   const [selectedImage, setSelectedImage] = useState<LightboxImage | null>(null);
+  const [currentIndex, setCurrentIndex] = useState<number>(0);
+  const [images, setImages] = useState<LightboxImage[]>([]);
 
-  const openLightbox = useCallback((image: LightboxImage) => {
+  const openLightbox = useCallback((image: LightboxImage, allImages?: LightboxImage[], index?: number) => {
     setSelectedImage(image);
+    if (allImages) {
+      setImages(allImages);
+      setCurrentIndex(index ?? 0);
+    }
   }, []);
 
   const closeLightbox = useCallback(() => {
     setSelectedImage(null);
+    setImages([]);
+    setCurrentIndex(0);
   }, []);
+
+  const navigateTo = useCallback((index: number) => {
+    if (images[index]) {
+      setCurrentIndex(index);
+      setSelectedImage(images[index]);
+    }
+  }, [images]);
 
   return {
     selectedImage,
     isOpen: !!selectedImage,
+    images,
+    currentIndex,
     openLightbox,
     closeLightbox,
+    navigateTo,
     setOpen: (open: boolean) => {
       if (!open) closeLightbox();
     },

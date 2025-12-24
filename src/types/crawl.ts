@@ -45,3 +45,15 @@ export interface CrawlState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface ScrollOptions {
+  enabled: boolean;
+  scrollCount: number;  // Default: 3
+  scrollDelay: number;  // Default: 500ms
+}
+
+export const DEFAULT_SCROLL_OPTIONS: ScrollOptions = {
+  enabled: false,
+  scrollCount: 3,
+  scrollDelay: 500,
+};

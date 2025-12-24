@@ -4,7 +4,13 @@ import { useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { LogOut, Settings, Image, Globe } from 'lucide-react';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { LogOut, Settings, Image, Globe, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -23,6 +29,7 @@ export function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -51,8 +58,8 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Navigation Links */}
-          <nav className="flex items-center gap-1 mr-2">
+          {/* Desktop Navigation */}
+          <nav className="hidden sm:flex items-center gap-1 mr-2">
             {navItems.map((item) => (
               <Link key={item.href} href={item.href}>
                 <Button
@@ -64,27 +71,76 @@ export function Header() {
                   )}
                 >
                   {item.icon}
-                  <span className="hidden sm:inline">{item.label}</span>
+                  <span>{item.label}</span>
                 </Button>
               </Link>
             ))}
           </nav>
 
-          {/* Logout */}
+          {/* Desktop Logout */}
           <Button
             variant="ghost"
             size="sm"
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="cursor-pointer"
+            className="hidden sm:flex cursor-pointer"
           >
             <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">
-              {isLoggingOut ? 'Signing out...' : 'Sign out'}
-            </span>
+            <span>{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>
+          </Button>
+
+          {/* Mobile Menu Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setMobileMenuOpen(true)}
+            className="sm:hidden cursor-pointer"
+          >
+            <Menu className="w-5 h-5" />
           </Button>
         </div>
       </header>
+
+      {/* Mobile Menu Sheet */}
+      <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+        <SheetContent side="right" className="w-64">
+          <SheetHeader>
+            <SheetTitle>Menu</SheetTitle>
+          </SheetHeader>
+          <nav className="flex flex-col gap-2 mt-6">
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    'w-full justify-start cursor-pointer',
+                    pathname.startsWith(item.href) && 'bg-accent text-foreground'
+                  )}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Button>
+              </Link>
+            ))}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                handleLogout();
+              }}
+              disabled={isLoggingOut}
+              className="w-full justify-start cursor-pointer mt-4"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>
+            </Button>
+          </nav>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
