@@ -21,7 +21,7 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Generator', href: '/generator', icon: <Image className="w-4 h-4" /> },
-  { label: 'DRB Fetcher', href: '/drb-fetcher', icon: <Globe className="w-4 h-4" /> },
+  { label: 'Fetcher', href: '/fetcher', icon: <Globe className="w-4 h-4" /> },
   { label: 'Settings', href: '/settings', icon: <Settings className="w-4 h-4" /> },
 ];
 

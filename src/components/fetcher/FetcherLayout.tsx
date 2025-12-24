@@ -9,20 +9,22 @@ import { useCrawl } from '@/hooks/useCrawl';
 import { useHistory } from '@/hooks/useHistory';
 import { HistorySheet } from '@/components/ui/history-sheet';
 import { Button } from '@/components/ui/button';
-import { Loader2, History, Settings } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Loader2, History, Settings, ImageIcon, FileText } from 'lucide-react';
 import { ScrollOptions, DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
 import { toast } from 'sonner';
 
-export function DRBFetcherLayout() {
+export function FetcherLayout() {
   const { images, isLoading, error, crawledUrl, scrollUsed, crawlUrl, clearResults } = useCrawl();
   const { items, addItem, removeItem, clearAll } = useHistory({
-    key: 'drb-fetch-history',
+    key: 'fetcher-history',
     maxItems: 20,
   });
   const [historyOpen, setHistoryOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [scrollOptions, setScrollOptions] = useState<ScrollOptions>(DEFAULT_SCROLL_OPTIONS);
   const lastCrawledUrl = useRef<string | null>(null);
+  const [activeTab, setActiveTab] = useState('images');
 
   // Add to history when crawl succeeds
   useEffect(() => {
@@ -65,9 +67,9 @@ export function DRBFetcherLayout() {
       <main className="max-w-[1750px] mx-auto px-4 py-8">
         <div className="mb-8 flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">DRB Fetcher</h1>
+            <h1 className="text-2xl font-bold tracking-tight">Fetcher</h1>
             <p className="text-muted-foreground mt-1">
-              Extract images from any webpage using Crawl4AI
+              Extract images and content from any webpage
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -92,43 +94,66 @@ export function DRBFetcherLayout() {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <URLInput
-            onSubmit={handleCrawl}
-            onClear={clearResults}
-            isLoading={isLoading}
-            hasResults={images.length > 0}
-          />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList>
+            <TabsTrigger value="images" className="cursor-pointer">
+              <ImageIcon className="w-4 h-4 mr-2" />
+              Image Fetcher
+            </TabsTrigger>
+            <TabsTrigger value="content" className="cursor-pointer">
+              <FileText className="w-4 h-4 mr-2" />
+              Content Fetcher
+            </TabsTrigger>
+          </TabsList>
 
-          {/* Error State */}
-          {error && (
-            <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
+          <TabsContent value="images" className="space-y-6">
+            <URLInput
+              onSubmit={handleCrawl}
+              onClear={clearResults}
+              isLoading={isLoading}
+              hasResults={images.length > 0}
+            />
 
-          {/* Loading State */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>Crawling page and extracting images...</span>
+            {/* Error State */}
+            {error && (
+              <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20">
+                <p className="text-sm text-destructive">{error}</p>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Results */}
-          {!isLoading && images.length > 0 && (
-            <ImageGrid images={images} crawledUrl={crawledUrl} />
-          )}
+            {/* Loading State */}
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Crawling page and extracting images...</span>
+                </div>
+              </div>
+            )}
 
-          {/* Empty State */}
-          {!isLoading && !error && images.length === 0 && crawledUrl && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p>No images found on this page.</p>
+            {/* Results */}
+            {!isLoading && images.length > 0 && (
+              <ImageGrid images={images} crawledUrl={crawledUrl} />
+            )}
+
+            {/* Empty State */}
+            {!isLoading && !error && images.length === 0 && crawledUrl && (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>No images found on this page.</p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="content" className="space-y-6">
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <FileText className="w-12 h-12 mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Content Fetcher</h3>
+              <p className="text-sm text-center max-w-md">
+                Extract text content from any webpage. Coming soon.
+              </p>
             </div>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
       </main>
 
       <HistorySheet
