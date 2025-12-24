@@ -106,7 +106,7 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
                         src={image.src}
                         alt={image.alt || `Image ${index + 1}`}
                         fill
-                        className="object-cover transition-transform group-hover:scale-105"
+                        className="object-cover object-top transition-transform group-hover:scale-105"
                         sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                         onError={() => {
                           setFailedImages(prev => new Set(prev).add(image.src));

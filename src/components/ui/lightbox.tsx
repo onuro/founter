@@ -165,7 +165,7 @@ export function Lightbox({
           </DialogHeader>
         )}
 
-        <div className="relative flex-1 min-h-0 bg-neutral-900 rounded-md flex items-center justify-center overflow-hidden">
+        <div className="relative flex-1 min-h-0 bg-neutral-900 rounded-md flex items-center justify-center overflow-hidden overflow-y-auto">
           {/* Previous Button */}
           {hasPrev && (
             <Button
@@ -185,12 +185,12 @@ export function Lightbox({
               href={image.src}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full h-full flex items-center justify-center"
+              className="w-full h-full max-w-3xl flex items-start justify-start"
             >
               <img
                 src={image.src}
                 alt={image.alt || 'Full size preview'}
-                className="w-full h-auto max-h-full object-contain cursor-zoom-in"
+                className="w-full h-auto cursor-zoom-in"
               />
             </a>
           ) : (
@@ -199,7 +199,7 @@ export function Lightbox({
               alt={image.alt || 'Full size preview'}
               width={1200}
               height={900}
-              className="object-contain max-w-full max-h-[60vh]"
+              className="object-cover object-top w-full max-w-3xl max-h-[60vh]"
               unoptimized
             />
           )}
