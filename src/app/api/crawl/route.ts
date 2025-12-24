@@ -3,8 +3,8 @@ import { CrawlResponse, ExtractedImage, ScrollOptions } from '@/types/crawl';
 
 const CRAWL4AI_URL = 'https://krawl.reaktorstudios.com/crawl';
 
-// Minimum width to filter out small icons/thumbnails (800px minimum as requested)
-const MIN_IMAGE_WIDTH = 800;
+// Minimum width to filter out small icons/thumbnails
+const MIN_IMAGE_WIDTH = 700;
 
 // Strip query parameters from URL to get full resolution image
 function stripQueryParams(url: string): string {
@@ -15,6 +15,50 @@ function stripQueryParams(url: string): string {
     // If URL parsing fails, try simple string split
     return url.split('?')[0];
   }
+}
+
+// Clean Cloudflare CDN URL by removing width/height params but keeping other optimizations
+// Input:  /cdn-cgi/image/width=390,height=520,fit=cover,format=jpg,quality=85/path/image.jpg
+// Output: /cdn-cgi/image/fit=cover,format=jpg,quality=85/path/image.jpg
+function cleanCdnUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+
+    // Check for Cloudflare CDN pattern
+    const cfMatch = pathname.match(/^(\/cdn-cgi\/image\/)([^/]+)(\/.*)?$/);
+    if (cfMatch) {
+      const prefix = cfMatch[1];         // /cdn-cgi/image/
+      const params = cfMatch[2];         // width=390,height=520,fit=cover,...
+      const imagePath = cfMatch[3] || ''; // /wp-content/uploads/.../image.jpg
+
+      // Remove width and height params, keep the rest
+      const cleanedParams = params
+        .split(',')
+        .filter(p => !p.startsWith('width=') && !p.startsWith('height='))
+        .join(',');
+
+      // Reconstruct URL with cleaned params
+      if (cleanedParams) {
+        return urlObj.origin + prefix + cleanedParams + imagePath;
+      } else {
+        // If no params left, just return the image path
+        return urlObj.origin + imagePath;
+      }
+    }
+
+    return url;
+  } catch {
+    return url;
+  }
+}
+
+// Get clean image URL by cleaning CDN params and stripping query params
+function getCleanImageUrl(url: string): string {
+  // First clean CDN URL (remove width/height but keep other params)
+  const cleanedUrl = cleanCdnUrl(url);
+  // Then strip any query parameters
+  return stripQueryParams(cleanedUrl);
 }
 
 interface SrcsetEntry {
@@ -82,29 +126,27 @@ function getLargerImageUrl(url1: string, url2: string): string {
 }
 
 // Parse srcset attribute and return the largest image URL
+// Handles URLs with commas (like Cloudflare CDN params)
 function parseSrcset(srcset: string): SrcsetEntry | null {
   if (!srcset) return null;
 
   const entries: SrcsetEntry[] = [];
-  const parts = srcset.split(',').map(s => s.trim());
 
-  for (const part of parts) {
-    // Handle "url 100w" format
-    const widthMatch = part.match(/^(\S+)\s+(\d+)w$/);
-    if (widthMatch) {
-      entries.push({
-        url: widthMatch[1],
-        width: parseInt(widthMatch[2], 10)
-      });
+  // Split on descriptor patterns (1x, 2x, 100w, etc.) followed by comma or end
+  // This handles URLs that contain commas (like Cloudflare CDN params)
+  const regex = /(\S+)\s+(\d+(?:\.\d+)?)(x|w)(?:,\s*|$)/g;
+  let match;
+
+  while ((match = regex.exec(srcset)) !== null) {
+    const url = match[1];
+    const value = parseFloat(match[2]);
+    const unit = match[3];
+
+    if (unit === 'w') {
+      entries.push({ url, width: value });
     } else {
-      // Handle "url 2x" format - treat as width multiplier (assume base 100)
-      const dprMatch = part.match(/^(\S+)\s+(\d+(?:\.\d+)?)x$/);
-      if (dprMatch) {
-        entries.push({
-          url: dprMatch[1],
-          width: Math.round(parseFloat(dprMatch[2]) * 100)
-        });
-      }
+      // x descriptor - treat as multiplier (assume base 100 for comparison)
+      entries.push({ url, width: Math.round(value * 100) });
     }
   }
 
@@ -116,6 +158,11 @@ function parseSrcset(srcset: string): SrcsetEntry | null {
 
 // Extract width from URL patterns like "_200x150" or "-200w"
 function extractWidthFromUrl(url: string): number | null {
+  // Cloudflare CDN pattern: /cdn-cgi/image/width=XXX
+  const cfWidthMatch = url.match(/\/cdn-cgi\/image\/[^/]*width=(\d+)/);
+  if (cfWidthMatch) {
+    return parseInt(cfWidthMatch[1], 10);
+  }
   // Pattern: resize=WIDTHxHEIGHT (Dribbble/imgix style)
   const resizeMatch = url.match(/resize=(\d+)x\d+/);
   if (resizeMatch) {
@@ -142,6 +189,27 @@ function extractWidthFromUrl(url: string): number | null {
     return parseInt(queryMatch[1], 10);
   }
   return null;
+}
+
+// Check if a Cloudflare CDN URL is valid (has actual image path after params)
+function isValidCdnUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    const pathname = urlObj.pathname;
+
+    // Check for Cloudflare CDN pattern
+    if (pathname.startsWith('/cdn-cgi/image/')) {
+      // Valid CDN URL should have actual path after params: /cdn-cgi/image/params/actual/path.jpg
+      // Invalid (truncated): /cdn-cgi/image/width=780 (no image path)
+      const afterCdn = pathname.replace(/^\/cdn-cgi\/image\/[^/]+/, '');
+      // Must have a path after the CDN params
+      return afterCdn.length > 0 && afterCdn.startsWith('/');
+    }
+
+    return true; // Non-CDN URLs pass through
+  } catch {
+    return false;
+  }
 }
 
 // Check if URL is likely a small icon/utility image
@@ -235,13 +303,25 @@ function extractImagesFromHtml(html: string): ExtractedImage[] {
         }
         if (largestUrl.startsWith('http://') || largestUrl.startsWith('https://')) {
           finalSrc = largestUrl;
-          imageWidth = largest.width;
+          // Don't use srcset descriptor value (e.g., 200 for 2x) as pixel width
+          // Extract actual width from URL instead, or keep the HTML width attribute
+          const urlWidth = extractWidthFromUrl(largestUrl);
+          if (urlWidth) {
+            imageWidth = urlWidth;
+          }
+          // If no width in URL and no HTML attribute, leave imageWidth as null
+          // to skip the MIN_IMAGE_WIDTH filter
         }
       }
     }
 
     // Validate URL
     if (!finalSrc || (!finalSrc.startsWith('http://') && !finalSrc.startsWith('https://'))) {
+      continue;
+    }
+
+    // Skip truncated/invalid CDN URLs
+    if (!isValidCdnUrl(finalSrc)) {
       continue;
     }
 
@@ -260,8 +340,8 @@ function extractImagesFromHtml(html: string): ExtractedImage[] {
       continue;
     }
 
-    // Strip query params for full resolution and deduplicate
-    const cleanSrc = stripQueryParams(finalSrc);
+    // Get clean URL (extract original from CDN + strip query params) and deduplicate
+    const cleanSrc = getCleanImageUrl(finalSrc);
     if (!images.some(img => img.src === cleanSrc)) {
       images.push({
         src: cleanSrc,
@@ -383,13 +463,31 @@ export async function POST(request: Request) {
     const result = data.results[0];
     let images: ExtractedImage[] = [];
 
-    if (result.media?.images && result.media.images.length > 0) {
+    // PRIORITY 1: Try HTML extraction first (better srcset handling)
+    if (result.html) {
+      images = extractImagesFromHtml(result.html);
+      images = deduplicateImages(images);
+    }
+
+    // PRIORITY 2: Try cleaned_html if no images from raw html
+    if (images.length === 0 && result.cleaned_html) {
+      images = extractImagesFromHtml(result.cleaned_html);
+      images = deduplicateImages(images);
+    }
+
+    // PRIORITY 3: Fallback to media.images if HTML extraction found nothing
+    if (images.length === 0 && result.media?.images && result.media.images.length > 0) {
       // Use group_id for deduplication - keep only the largest image per group
       const groupMap = new Map<number | string, { img: typeof result.media.images[0]; width: number }>();
 
       for (const img of result.media.images) {
         // Skip invalid URLs
         if (!img.src || (!img.src.startsWith('http://') && !img.src.startsWith('https://'))) {
+          continue;
+        }
+
+        // Skip truncated/invalid CDN URLs
+        if (!isValidCdnUrl(img.src)) {
           continue;
         }
 
@@ -416,23 +514,12 @@ export async function POST(request: Request) {
         }
       }
 
-      // Convert to ExtractedImage format and strip query params for full resolution
+      // Convert to ExtractedImage format and get clean URLs (extract from CDN + strip query params)
       images = Array.from(groupMap.values()).map(({ img, width }) => ({
-        src: stripQueryParams(img.src),
+        src: getCleanImageUrl(img.src),
         alt: img.alt || img.desc || '',
         width: width || undefined,
       }));
-    }
-
-    // Fallback to HTML extraction if no images from media
-    if (images.length === 0 && result.html) {
-      images = extractImagesFromHtml(result.html);
-      images = deduplicateImages(images);
-    }
-
-    if (images.length === 0 && result.cleaned_html) {
-      images = extractImagesFromHtml(result.cleaned_html);
-      images = deduplicateImages(images);
     }
 
     return NextResponse.json({
