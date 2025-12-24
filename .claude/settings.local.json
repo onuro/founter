@@ -12,7 +12,9 @@
       "Bash(kill:*)",
       "Bash(mv:*)",
       "Bash(tree:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)"
     ]
   }
 }

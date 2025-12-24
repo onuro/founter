@@ -54,7 +54,7 @@ export function URLInput({ onSubmit, onClear, isLoading, hasResults }: URLInputP
     <Card>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <div className="flex-1 relative">
               <Input
                 type="text"

@@ -15,6 +15,12 @@ export interface CrawlResult {
       src: string;
       alt?: string;
       desc?: string;
+      width?: number | null;
+      height?: number | null;
+      score?: number;
+      group_id?: number;
+      type?: string;
+      format?: string;
     }>;
   };
   links?: {
@@ -31,6 +37,7 @@ export interface CrawlResponse {
 export interface ExtractedImage {
   src: string;
   alt?: string;
+  width?: number;
 }
 
 export interface CrawlState {

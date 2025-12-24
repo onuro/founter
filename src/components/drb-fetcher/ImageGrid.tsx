@@ -5,12 +5,7 @@ import Image from 'next/image';
 import { ExtractedImage } from '@/types/crawl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Lightbox, useLightbox } from '@/components/ui/lightbox';
 import { Copy, Check, ExternalLink, ImageIcon } from 'lucide-react';
 
 interface ImageGridProps {
@@ -19,8 +14,8 @@ interface ImageGridProps {
 }
 
 export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
-  const [selectedImage, setSelectedImage] = useState<ExtractedImage | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const { selectedImage, isOpen, openLightbox, setOpen } = useLightbox();
 
   const copyToClipboard = async (src: string, index: number) => {
     try {
@@ -67,7 +62,7 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
               >
                 {/* Thumbnail */}
                 <button
-                  onClick={() => setSelectedImage(image)}
+                  onClick={() => openLightbox({ src: image.src, alt: image.alt })}
                   className="w-full h-full cursor-pointer"
                 >
                   <Image
@@ -110,70 +105,7 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
         </CardContent>
       </Card>
 
-      {/* Preview Modal */}
-      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center justify-between gap-4">
-              <span className="truncate">
-                {selectedImage?.alt || 'Image Preview'}
-              </span>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="cursor-pointer"
-                  onClick={() => {
-                    if (selectedImage) {
-                      copyToClipboard(selectedImage.src, -1);
-                    }
-                  }}
-                >
-                  {copiedIndex === -1 ? (
-                    <>
-                      <Check className="w-3 h-3" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-3 h-3" />
-                      Copy URL
-                    </>
-                  )}
-                </Button>
-                <a
-                  href={selectedImage?.src}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex"
-                >
-                  <Button size="sm" variant="outline" className="cursor-pointer">
-                    <ExternalLink className="w-3 h-3" />
-                    Open
-                  </Button>
-                </a>
-              </div>
-            </DialogTitle>
-          </DialogHeader>
-          {selectedImage && (
-            <div className="relative w-full aspect-video bg-neutral-900 rounded-md overflow-hidden">
-              <Image
-                src={selectedImage.src}
-                alt={selectedImage.alt || 'Full size preview'}
-                fill
-                className="object-contain"
-                sizes="(max-width: 1024px) 100vw, 1024px"
-                unoptimized
-              />
-            </div>
-          )}
-          {selectedImage && (
-            <p className="text-xs text-muted-foreground break-all mt-2">
-              {selectedImage.src}
-            </p>
-          )}
-        </DialogContent>
-      </Dialog>
+      <Lightbox image={selectedImage} open={isOpen} onOpenChange={setOpen} />
     </>
   );
 }

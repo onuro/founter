@@ -3,27 +3,271 @@ import { CrawlResponse, ExtractedImage } from '@/types/crawl';
 
 const CRAWL4AI_URL = 'https://krawl.reaktorstudios.com/crawl';
 
-function extractImagesFromHtml(html: string): ExtractedImage[] {
-  const images: ExtractedImage[] = [];
-  const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*>/gi;
-  let match;
+// Minimum width to filter out small icons/thumbnails (800px minimum as requested)
+const MIN_IMAGE_WIDTH = 800;
 
-  while ((match = imgRegex.exec(html)) !== null) {
-    const src = match[1];
-    const alt = match[2] || '';
-    if (src && (src.startsWith('http://') || src.startsWith('https://'))) {
-      images.push({ src, alt });
+// Strip query parameters from URL to get full resolution image
+function stripQueryParams(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.origin + urlObj.pathname;
+  } catch {
+    // If URL parsing fails, try simple string split
+    return url.split('?')[0];
+  }
+}
+
+interface SrcsetEntry {
+  url: string;
+  width: number;
+}
+
+// Normalize URL to find duplicate images served at different sizes
+// This strips size-related patterns to get a "base" identifier for the same image
+function getBaseImageUrl(url: string): string {
+  return url
+    // Dribbble patterns: teaser-, normal-, original-
+    .replace(/\/(teaser|normal|original|small|medium|large|mini|tiny|preview)-/gi, '/BASE-')
+    // Common size suffixes: _800x600, -800x600
+    .replace(/[_-]\d+x\d+/g, '')
+    // Width patterns: _800w, -800w
+    .replace(/[_-]\d+w\b/g, '')
+    // DPR patterns: @2x, _2x, -2x, @3x
+    .replace(/[@_-][123]x(?=\.|$)/gi, '')
+    // Query params: ?w=800, &h=600, ?size=large, ?resize=800x600
+    .replace(/[?&](w|h|width|height|size|resize|quality|q)=[^&]*/gi, '')
+    // Path segments with sizes: /800x600/, /w_800/
+    .replace(/\/\d+x\d+\//g, '/SIZE/')
+    .replace(/\/w_\d+\//g, '/SIZE/')
+    // Cloudinary/imgix transforms
+    .replace(/\/c_[^/]+/g, '')
+    .replace(/\/f_[^/]+/g, '')
+    .toLowerCase();
+}
+
+// Determine which URL is likely the larger/original image
+function getLargerImageUrl(url1: string, url2: string): string {
+  const lower1 = url1.toLowerCase();
+  const lower2 = url2.toLowerCase();
+
+  // Prefer "original"
+  if (lower1.includes('/original-') || lower1.includes('/original/')) return url1;
+  if (lower2.includes('/original-') || lower2.includes('/original/')) return url2;
+
+  // Prefer "large"
+  if (lower1.includes('/large-') || lower1.includes('/large/')) return url1;
+  if (lower2.includes('/large-') || lower2.includes('/large/')) return url2;
+
+  // Avoid "teaser", "mini", "tiny", "small", "preview", "thumb"
+  const smallPatterns = ['/teaser-', '/mini-', '/tiny-', '/small-', '/preview-', '/thumb'];
+  const isSmall1 = smallPatterns.some(p => lower1.includes(p));
+  const isSmall2 = smallPatterns.some(p => lower2.includes(p));
+  if (isSmall1 && !isSmall2) return url2;
+  if (isSmall2 && !isSmall1) return url1;
+
+  // Extract and compare widths from URL
+  const width1 = extractWidthFromUrl(url1);
+  const width2 = extractWidthFromUrl(url2);
+  if (width1 && width2) return width1 > width2 ? url1 : url2;
+  if (width1 && !width2) return url1;
+  if (width2 && !width1) return url2;
+
+  // Check DPR (@2x, @3x, etc.)
+  const dpr1 = parseInt(url1.match(/[@_-](\d)x(?=\.|$)/i)?.[1] || '1', 10);
+  const dpr2 = parseInt(url2.match(/[@_-](\d)x(?=\.|$)/i)?.[1] || '1', 10);
+  if (dpr1 !== dpr2) return dpr1 > dpr2 ? url1 : url2;
+
+  // Default to first
+  return url1;
+}
+
+// Parse srcset attribute and return the largest image URL
+function parseSrcset(srcset: string): SrcsetEntry | null {
+  if (!srcset) return null;
+
+  const entries: SrcsetEntry[] = [];
+  const parts = srcset.split(',').map(s => s.trim());
+
+  for (const part of parts) {
+    // Handle "url 100w" format
+    const widthMatch = part.match(/^(\S+)\s+(\d+)w$/);
+    if (widthMatch) {
+      entries.push({
+        url: widthMatch[1],
+        width: parseInt(widthMatch[2], 10)
+      });
+    } else {
+      // Handle "url 2x" format - treat as width multiplier (assume base 100)
+      const dprMatch = part.match(/^(\S+)\s+(\d+(?:\.\d+)?)x$/);
+      if (dprMatch) {
+        entries.push({
+          url: dprMatch[1],
+          width: Math.round(parseFloat(dprMatch[2]) * 100)
+        });
+      }
     }
   }
 
-  const imgRegex2 = /<img[^>]+alt=["']([^"']*)["'][^>]+src=["']([^"']+)["'][^>]*>/gi;
-  while ((match = imgRegex2.exec(html)) !== null) {
-    const alt = match[1] || '';
-    const src = match[2];
-    if (src && (src.startsWith('http://') || src.startsWith('https://'))) {
-      if (!images.some(img => img.src === src)) {
-        images.push({ src, alt });
+  if (entries.length === 0) return null;
+
+  // Return the entry with the largest width
+  return entries.reduce((max, entry) => entry.width > max.width ? entry : max);
+}
+
+// Extract width from URL patterns like "_200x150" or "-200w"
+function extractWidthFromUrl(url: string): number | null {
+  // Pattern: resize=WIDTHxHEIGHT (Dribbble/imgix style)
+  const resizeMatch = url.match(/resize=(\d+)x\d+/);
+  if (resizeMatch) {
+    return parseInt(resizeMatch[1], 10);
+  }
+  // Pattern: /WIDTHx0/ or /WIDTHxHEIGHT/ in path (land-book.com style)
+  const pathSizeMatch = url.match(/\/(\d+)x\d+\//);
+  if (pathSizeMatch) {
+    return parseInt(pathSizeMatch[1], 10);
+  }
+  // Pattern: _WIDTHxHEIGHT or -WIDTHxHEIGHT
+  const sizeMatch = url.match(/[_-](\d+)x\d+/);
+  if (sizeMatch) {
+    return parseInt(sizeMatch[1], 10);
+  }
+  // Pattern: -WIDTHw or _WIDTHw
+  const widthMatch = url.match(/[_-](\d+)w/);
+  if (widthMatch) {
+    return parseInt(widthMatch[1], 10);
+  }
+  // Pattern: ?w=WIDTH or &w=WIDTH
+  const queryMatch = url.match(/[?&]w=(\d+)/);
+  if (queryMatch) {
+    return parseInt(queryMatch[1], 10);
+  }
+  return null;
+}
+
+// Check if URL is likely a small icon/utility image
+function isSmallUtilityImage(url: string): boolean {
+  const lowercaseSrc = url.toLowerCase();
+
+  // Common small image path patterns
+  if (
+    lowercaseSrc.includes('/icon') ||
+    lowercaseSrc.includes('/favicon') ||
+    lowercaseSrc.includes('/logo') ||
+    lowercaseSrc.includes('/avatar') ||
+    lowercaseSrc.includes('/badge') ||
+    lowercaseSrc.includes('/emoji') ||
+    lowercaseSrc.includes('1x1') ||
+    lowercaseSrc.includes('pixel') ||
+    lowercaseSrc.includes('/spinner') ||
+    lowercaseSrc.includes('/loader') ||
+    lowercaseSrc.includes('/users/') ||      // User profile images
+    lowercaseSrc.includes('/profile') ||     // Profile images
+    lowercaseSrc.includes('/member') ||      // Member avatars
+    lowercaseSrc.includes('/author') ||      // Author thumbnails
+    lowercaseSrc.includes('/thumb') ||       // Thumbnails
+    lowercaseSrc.includes('_thumb') ||       // Thumbnails
+    lowercaseSrc.includes('-thumb') ||       // Thumbnails
+    lowercaseSrc.includes('/mini') ||        // Mini images
+    lowercaseSrc.includes('_mini') ||        // Mini images
+    lowercaseSrc.includes('/mini-') ||       // Mini images (Dribbble style)
+    lowercaseSrc.includes('/small') ||       // Small variants
+    lowercaseSrc.includes('_small') ||       // Small variants
+    lowercaseSrc.includes('-small') ||       // Small variants
+    lowercaseSrc.includes('/small-') ||      // Small variants (Dribbble style)
+    lowercaseSrc.includes('/teaser-') ||     // Dribbble teaser thumbnails
+    lowercaseSrc.includes('/tiny-') ||       // Tiny images
+    lowercaseSrc.includes('/preview-') ||    // Preview thumbnails
+    lowercaseSrc.includes('socialproof') ||  // Social proof testimonial images
+    lowercaseSrc.includes('testimonial') ||  // Testimonial images
+    lowercaseSrc.includes('/team/') ||       // Team member photos
+    lowercaseSrc.includes('/staff/')         // Staff photos
+  ) {
+    return true;
+  }
+
+  // Check for small dimension patterns in URL
+  // Patterns: resize=400x300, /600x0/, _400x300, -400x300
+  const width = extractWidthFromUrl(url);
+  if (width && width < MIN_IMAGE_WIDTH) {
+    return true;
+  }
+
+  return false;
+}
+
+function extractImagesFromHtml(html: string): ExtractedImage[] {
+  const images: ExtractedImage[] = [];
+
+  // Match all img tags
+  const imgTagRegex = /<img[^>]*>/gi;
+  let tagMatch;
+
+  while ((tagMatch = imgTagRegex.exec(html)) !== null) {
+    const imgTag = tagMatch[0];
+
+    // Extract src
+    const srcMatch = imgTag.match(/\bsrc=["']([^"']+)["']/i);
+    const src = srcMatch ? srcMatch[1] : null;
+
+    // Extract srcset
+    const srcsetMatch = imgTag.match(/\bsrcset=["']([^"']+)["']/i);
+    const srcset = srcsetMatch ? srcsetMatch[1] : null;
+
+    // Extract alt
+    const altMatch = imgTag.match(/\balt=["']([^"']*)["']/i);
+    const alt = altMatch ? altMatch[1] : '';
+
+    // Extract width attribute
+    const widthAttrMatch = imgTag.match(/\bwidth=["']?(\d+)["']?/i);
+    const widthAttr = widthAttrMatch ? parseInt(widthAttrMatch[1], 10) : null;
+
+    let finalSrc = src;
+    let imageWidth = widthAttr;
+
+    // If srcset exists, try to get the largest image
+    if (srcset) {
+      const largest = parseSrcset(srcset);
+      if (largest && largest.url) {
+        let largestUrl = largest.url;
+        // Handle protocol-relative URLs
+        if (largestUrl.startsWith('//')) {
+          largestUrl = 'https:' + largestUrl;
+        }
+        if (largestUrl.startsWith('http://') || largestUrl.startsWith('https://')) {
+          finalSrc = largestUrl;
+          imageWidth = largest.width;
+        }
       }
+    }
+
+    // Validate URL
+    if (!finalSrc || (!finalSrc.startsWith('http://') && !finalSrc.startsWith('https://'))) {
+      continue;
+    }
+
+    // Try to extract width from URL if we don't have it
+    if (!imageWidth) {
+      imageWidth = extractWidthFromUrl(finalSrc);
+    }
+
+    // Filter out small images if we know the width
+    if (imageWidth && imageWidth < MIN_IMAGE_WIDTH) {
+      continue;
+    }
+
+    // Skip common icon/utility image patterns
+    if (isSmallUtilityImage(finalSrc)) {
+      continue;
+    }
+
+    // Strip query params for full resolution and deduplicate
+    const cleanSrc = stripQueryParams(finalSrc);
+    if (!images.some(img => img.src === cleanSrc)) {
+      images.push({
+        src: cleanSrc,
+        alt,
+        width: imageWidth || undefined
+      });
     }
   }
 
@@ -31,12 +275,25 @@ function extractImagesFromHtml(html: string): ExtractedImage[] {
 }
 
 function deduplicateImages(images: ExtractedImage[]): ExtractedImage[] {
-  const seen = new Set<string>();
-  return images.filter(img => {
-    if (seen.has(img.src)) return false;
-    seen.add(img.src);
-    return true;
-  });
+  // Group images by their normalized base URL
+  const baseUrlMap = new Map<string, ExtractedImage>();
+
+  for (const img of images) {
+    const baseUrl = getBaseImageUrl(img.src);
+    const existing = baseUrlMap.get(baseUrl);
+
+    if (!existing) {
+      baseUrlMap.set(baseUrl, img);
+    } else {
+      // Keep the larger version
+      const largerUrl = getLargerImageUrl(existing.src, img.src);
+      if (largerUrl === img.src) {
+        baseUrlMap.set(baseUrl, img);
+      }
+    }
+  }
+
+  return Array.from(baseUrlMap.values());
 }
 
 export async function POST(request: Request) {
@@ -63,8 +320,15 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         urls: [url],
-        crawler_config: {},
-        browser_config: {},
+        crawler_config: {
+          wait_until: 'networkidle',
+          page_timeout: 60000,
+          wait_for_images: true,
+        },
+        browser_config: {
+          headless: true,
+          java_script_enabled: true,
+        },
       }),
       signal: controller.signal,
     });
@@ -101,23 +365,56 @@ export async function POST(request: Request) {
     let images: ExtractedImage[] = [];
 
     if (result.media?.images && result.media.images.length > 0) {
-      images = result.media.images
-        .filter(img => img.src && (img.src.startsWith('http://') || img.src.startsWith('https://')))
-        .map(img => ({
-          src: img.src,
-          alt: img.alt || img.desc || '',
-        }));
+      // Use group_id for deduplication - keep only the largest image per group
+      const groupMap = new Map<number | string, { img: typeof result.media.images[0]; width: number }>();
+
+      for (const img of result.media.images) {
+        // Skip invalid URLs
+        if (!img.src || (!img.src.startsWith('http://') && !img.src.startsWith('https://'))) {
+          continue;
+        }
+
+        // Skip utility images (avatars, icons, etc.)
+        if (isSmallUtilityImage(img.src)) {
+          continue;
+        }
+
+        // Get width from native field OR extract from URL
+        const width = img.width ?? extractWidthFromUrl(img.src) ?? 0;
+
+        // Skip images below minimum width
+        if (width > 0 && width < MIN_IMAGE_WIDTH) {
+          continue;
+        }
+
+        // Use group_id for deduplication, or src as fallback
+        const groupKey = img.group_id ?? img.src;
+        const existing = groupMap.get(groupKey);
+
+        // Keep the largest version within each group
+        if (!existing || width > existing.width) {
+          groupMap.set(groupKey, { img, width });
+        }
+      }
+
+      // Convert to ExtractedImage format and strip query params for full resolution
+      images = Array.from(groupMap.values()).map(({ img, width }) => ({
+        src: stripQueryParams(img.src),
+        alt: img.alt || img.desc || '',
+        width: width || undefined,
+      }));
     }
 
+    // Fallback to HTML extraction if no images from media
     if (images.length === 0 && result.html) {
       images = extractImagesFromHtml(result.html);
+      images = deduplicateImages(images);
     }
 
     if (images.length === 0 && result.cleaned_html) {
       images = extractImagesFromHtml(result.cleaned_html);
+      images = deduplicateImages(images);
     }
-
-    images = deduplicateImages(images);
 
     return NextResponse.json({
       success: true,
