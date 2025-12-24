@@ -112,7 +112,7 @@
   /* #71717a gray */
 
   /* Accent - subtle yellow tint for hovers */
-  --accent: oklch(0.93 0.21 109 / 10%);
+  --accent: oklch(109 / 10%);
   --accent-foreground: oklch(0.98 0 0);
 
   /* Destructive */
