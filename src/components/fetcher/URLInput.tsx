@@ -53,7 +53,7 @@ export function URLInput({ value, onChange, onSubmit, onClear, isLoading, hasRes
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardContent className="pt-0">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-2">
             <div className="flex-1 relative">

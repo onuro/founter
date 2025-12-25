@@ -4,7 +4,8 @@ export type PresetType = 'IMAGE' | 'CONTENT';
 
 export interface CrawlOptions {
   scroll: ScrollOptions;
-  // Future options can be added here (e.g., selectors, delays, etc.)
+  cookies?: string; // Tab-separated cookie string from browser DevTools
+  loadMoreSelector?: string; // CSS selector for "Load more" button (e.g., "button.load-more")
 }
 
 export interface SitePreset {

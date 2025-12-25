@@ -22,7 +22,12 @@ export function useCrawl() {
   const [crawledUrl, setCrawledUrl] = useState<string | null>(null);
   const [scrollUsed, setScrollUsed] = useState<ScrollUsedInfo | null>(null);
 
-  const crawlUrl = useCallback(async (url: string, scrollOptions?: ScrollOptions) => {
+  const crawlUrl = useCallback(async (
+    url: string,
+    scrollOptions?: ScrollOptions,
+    cookies?: string,
+    loadMoreSelector?: string
+  ) => {
     setIsLoading(true);
     setError(null);
     setImages([]);
@@ -33,7 +38,7 @@ export function useCrawl() {
       const response = await fetch('/api/crawl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, scrollOptions }),
+        body: JSON.stringify({ url, scrollOptions, cookies, loadMoreSelector }),
       });
 
       const data = await response.json();

@@ -91,7 +91,7 @@
   /* off-white text */
 
   /* Card/elevated surfaces */
-  --card: lab(4.5% 0 0);
+  --card: lab(5% 0 0);
   --card-foreground: oklch(0.98 0 0);
   --popover: oklch(0.11 0 0);
   --popover-foreground: oklch(0.98 0 0);
@@ -120,7 +120,7 @@
 
   /* Borders - very subtle */
   --border: oklch(1 0 0 / 6%);
-  --input: oklch(0.22 0 0);
+  --input: oklch(0.25 0 0);
   /* solid dark input bg */
   --ring: oklch(0.93 0.21 109 / 50%);
   /* yellow focus ring */

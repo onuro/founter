@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { CrawlResponse, ExtractedImage, ScrollOptions } from '@/types/crawl';
+import { parseCookieString } from '@/lib/cookies';
 
 const CRAWL4AI_URL = 'https://krawl.reaktorstudios.com/crawl';
 
@@ -385,7 +386,12 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    const { url, scrollOptions } = body as { url: string; scrollOptions?: ScrollOptions };
+    const { url, scrollOptions, cookies, loadMoreSelector } = body as {
+      url: string;
+      scrollOptions?: ScrollOptions;
+      cookies?: string;
+      loadMoreSelector?: string;
+    };
 
     if (!url) {
       clearTimeout(timeoutId);
@@ -402,20 +408,46 @@ export async function POST(request: Request) {
       wait_for_images: true,
     };
 
+    // Parse cookies if provided
+    const parsedCookies = cookies ? parseCookieString(cookies) : [];
+
     // Add scroll options if enabled - use js_code for scrolling
     if (scrollOptions?.enabled) {
-      // Generate JavaScript that scrolls the page multiple times
+      // Generate JavaScript that scrolls the page and optionally clicks "Load more" buttons
+      const loadMoreCode = loadMoreSelector
+        ? `
+            const loadMoreBtn = document.querySelector('${loadMoreSelector.replace(/'/g, "\\'")}');
+            if (loadMoreBtn) {
+              loadMoreBtn.click();
+              await new Promise(r => setTimeout(r, ${scrollOptions.scrollDelay}));
+            }
+          `
+        : '';
+
       const scrollScript = `
         (async () => {
           for (let i = 0; i < ${scrollOptions.scrollCount}; i++) {
             window.scrollTo(0, document.body.scrollHeight);
             await new Promise(r => setTimeout(r, ${scrollOptions.scrollDelay}));
+            ${loadMoreCode}
           }
         })();
       `;
       crawlerConfig.js_code = scrollScript;
       // Add extra wait time to allow images to load after scrolling
-      crawlerConfig.delay_before_return_html = (scrollOptions.scrollCount * scrollOptions.scrollDelay) / 1000 + 1;
+      const extraTime = loadMoreSelector ? 2 : 1; // Extra time if clicking load more
+      crawlerConfig.delay_before_return_html = (scrollOptions.scrollCount * scrollOptions.scrollDelay) / 1000 + extraTime;
+    }
+
+    // Build browser config with optional cookies
+    const browserConfig: Record<string, unknown> = {
+      headless: true,
+      java_script_enabled: true,
+    };
+
+    // Add cookies to browser config if provided
+    if (parsedCookies.length > 0) {
+      browserConfig.cookies = parsedCookies;
     }
 
     const crawlResponse = await fetch(CRAWL4AI_URL, {
@@ -427,10 +459,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         urls: [url],
         crawler_config: crawlerConfig,
-        browser_config: {
-          headless: true,
-          java_script_enabled: true,
-        },
+        browser_config: browserConfig,
       }),
       signal: controller.signal,
     });

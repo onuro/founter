@@ -14,7 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { SitePreset, CrawlOptions } from '@/types/preset';
 import { DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { isValidCookieFormat, parseCookieString, getCookieSummary } from '@/lib/cookies';
 
 const DEFAULT_CRAWL_OPTIONS: CrawlOptions = {
   scroll: DEFAULT_SCROLL_OPTIONS,
@@ -38,6 +39,7 @@ export function PresetFormDialog({
   const [crawlOptions, setCrawlOptions] = useState<CrawlOptions>(DEFAULT_CRAWL_OPTIONS);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCookies, setShowCookies] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -45,10 +47,12 @@ export function PresetFormDialog({
         setLabel(preset.label);
         setUrl(preset.url);
         setCrawlOptions(preset.crawlOptions);
+        setShowCookies(!!preset.crawlOptions.cookies);
       } else {
         setLabel('');
         setUrl('');
         setCrawlOptions(DEFAULT_CRAWL_OPTIONS);
+        setShowCookies(false);
       }
       setError(null);
     }
@@ -70,6 +74,12 @@ export function PresetFormDialog({
       new URL(url);
     } catch {
       setError('Please enter a valid URL');
+      return;
+    }
+
+    // Validate cookies format if provided
+    if (crawlOptions.cookies && !isValidCookieFormat(crawlOptions.cookies)) {
+      setError('Invalid cookie format. Please paste cookies from browser DevTools.');
       return;
     }
 
@@ -164,7 +174,7 @@ export function PresetFormDialog({
               <Input
                 type="number"
                 min={1}
-                max={30}
+                max={100}
                 value={crawlOptions.scroll.scrollCount}
                 onChange={(e) => handleScrollCountChange(e.target.value)}
                 disabled={!crawlOptions.scroll.enabled || isSubmitting}
@@ -188,6 +198,68 @@ export function PresetFormDialog({
                 <span className="text-sm text-muted-foreground">ms</span>
               </div>
             </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Load more selector</label>
+              <Input
+                value={crawlOptions.loadMoreSelector || ''}
+                onChange={(e) =>
+                  setCrawlOptions({
+                    ...crawlOptions,
+                    loadMoreSelector: e.target.value || undefined,
+                  })
+                }
+                placeholder="e.g., button.load-more, [data-load-more]"
+                disabled={!crawlOptions.scroll.enabled || isSubmitting}
+                className="font-mono text-xs"
+              />
+              <p className="text-xs text-muted-foreground">
+                CSS selector for &quot;Load more&quot; button (for sites like Dribbble)
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-2 border-t">
+            <button
+              type="button"
+              onClick={() => setShowCookies(!showCookies)}
+              className="flex items-center justify-between w-full text-left"
+              disabled={isSubmitting}
+            >
+              <div className="space-y-0.5">
+                <span className="text-sm font-medium">Authentication (Cookies)</span>
+                <p className="text-xs text-muted-foreground">
+                  {crawlOptions.cookies
+                    ? getCookieSummary(parseCookieString(crawlOptions.cookies))
+                    : 'Add cookies for authenticated access'}
+                </p>
+              </div>
+              {showCookies ? (
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+              )}
+            </button>
+
+            {showCookies && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  Paste cookies from Chrome DevTools → Application → Cookies → select all rows → Copy
+                </p>
+                <textarea
+                  value={crawlOptions.cookies || ''}
+                  onChange={(e) =>
+                    setCrawlOptions({
+                      ...crawlOptions,
+                      cookies: e.target.value || undefined,
+                    })
+                  }
+                  placeholder="_dribbble_session&#9;abc123...&#9;dribbble.com&#9;/&#9;Session..."
+                  disabled={isSubmitting}
+                  className="w-full h-24 px-3 py-2 text-xs font-mono border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            )}
           </div>
 
           {error && <p className="text-sm text-destructive">{error}</p>}

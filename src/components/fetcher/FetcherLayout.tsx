@@ -16,6 +16,7 @@ import { Loader2, History, Settings, ImageIcon, FileText, Bookmark } from 'lucid
 import { ScrollOptions, DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
 import { toast } from 'sonner';
 import type { SitePreset } from '@/types/preset';
+import { Card } from '../ui/card';
 
 export function FetcherLayout() {
   const { images, isLoading, error, crawledUrl, scrollUsed, crawlUrl, clearResults } = useCrawl();
@@ -35,6 +36,8 @@ export function FetcherLayout() {
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
   const [scrollOptions, setScrollOptions] = useState<ScrollOptions>(DEFAULT_SCROLL_OPTIONS);
+  const [activeCookies, setActiveCookies] = useState<string | undefined>(undefined);
+  const [activeLoadMoreSelector, setActiveLoadMoreSelector] = useState<string | undefined>(undefined);
   const [inputUrl, setInputUrl] = useState('');
   const lastCrawledUrl = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState('images');
@@ -62,6 +65,9 @@ export function FetcherLayout() {
   }, [crawledUrl, images.length, addItem, scrollUsed]);
 
   const handleHistoryItemClick = useCallback((item: { url: string }) => {
+    // History items don't have preset options - clear them
+    setActiveCookies(undefined);
+    setActiveLoadMoreSelector(undefined);
     crawlUrl(item.url, scrollOptions);
   }, [crawlUrl, scrollOptions]);
 
@@ -70,17 +76,22 @@ export function FetcherLayout() {
   }, [removeItem]);
 
   const handleCrawl = useCallback((url: string) => {
-    crawlUrl(url, scrollOptions);
-  }, [crawlUrl, scrollOptions]);
+    crawlUrl(url, scrollOptions, activeCookies, activeLoadMoreSelector);
+  }, [crawlUrl, scrollOptions, activeCookies, activeLoadMoreSelector]);
 
   const handlePresetSelect = useCallback((preset: SitePreset) => {
     setInputUrl(preset.url);
     setScrollOptions(preset.crawlOptions.scroll);
-    toast.info(`Loaded preset: ${preset.label}`);
+    setActiveCookies(preset.crawlOptions.cookies);
+    setActiveLoadMoreSelector(preset.crawlOptions.loadMoreSelector);
+    const hasCookies = !!preset.crawlOptions.cookies;
+    toast.info(`Loaded preset: ${preset.label}${hasCookies ? ' (with auth)' : ''}`);
   }, []);
 
   const handleClearResults = useCallback(() => {
     setInputUrl('');
+    setActiveCookies(undefined);
+    setActiveLoadMoreSelector(undefined);
     clearResults();
   }, [clearResults]);
 
@@ -133,18 +144,21 @@ export function FetcherLayout() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="images" className="cursor-pointer">
-              <ImageIcon className="w-4 h-4 mr-2" />
-              Image Fetcher
-            </TabsTrigger>
-            <TabsTrigger value="content" className="cursor-pointer">
-              <FileText className="w-4 h-4 mr-2" />
-              Content Fetcher
-            </TabsTrigger>
-          </TabsList>
+          <Card>
 
-          <TabsContent value="images" className="space-y-6">
+
+            <TabsList>
+              <TabsTrigger value="images" className="cursor-pointer">
+                <ImageIcon className="w-4 h-4 mr-2" />
+                Image Fetcher
+              </TabsTrigger>
+              <TabsTrigger value="content" className="cursor-pointer">
+                <FileText className="w-4 h-4 mr-2" />
+                Content Fetcher
+              </TabsTrigger>
+            </TabsList>
+          </Card>
+          <TabsContent value="images">
             <URLInput
               value={inputUrl}
               onChange={setInputUrl}
