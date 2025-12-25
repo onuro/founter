@@ -104,40 +104,40 @@ export function FetcherLayout() {
     <div className="min-h-screen p-4 bg-background text-foreground">
       <Header />
 
-      <main className="max-w-[1750px] mx-auto px-4 py-8">
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Fetcher</h1>
-            <p className="text-muted-foreground mt-1">
-              Extract images and content from any webpage
-            </p>
+      <main className="max-w-[1750px] mx-auto px-3 py-8">
+        <Card className='rounded-b-xs'>
+          <div className="p-2 flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Fetcher</h1>
+              <p className="text-muted-foreground mt-1">
+                Extract images and content from any webpage
+              </p>
+            </div>
+            <div className="flex items-center gap-1 bg-secondary p-1 rounded-md">
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={openOptions}
+                title="Crawl options"
+                className="cursor-pointer"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={openHistory}
+                title="View history"
+                className="cursor-pointer"
+              >
+                <History className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={openOptions}
-              title="Crawl options"
-              className="cursor-pointer"
-            >
-              <Settings className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={openHistory}
-              title="View history"
-              className="cursor-pointer"
-            >
-              <History className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+        </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <Card>
-
-
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 mt-1">
+          <Card className='rounded-t-xs'>
             <TabsList>
               <TabsTrigger value="images" className="cursor-pointer">
                 <ImageIcon className="w-4 h-4 mr-2" />

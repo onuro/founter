@@ -88,7 +88,7 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
 
   return (
     <>
-      <Card>
+      <Card className="mt-4">
         <CardHeader>
           <CardTitle className="flex flex-1 items-center justify-between">
             <div className="flex items-center gap-2">

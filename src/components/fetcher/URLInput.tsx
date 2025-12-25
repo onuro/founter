@@ -81,7 +81,7 @@ export function URLInput({ value, onChange, onSubmit, onClear, onOpenPresets, is
             </div>
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               size="icon"
               onClick={onOpenPresets}
               title="Site presets"
