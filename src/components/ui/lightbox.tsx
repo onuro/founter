@@ -56,6 +56,7 @@ export function Lightbox({
 }: LightboxProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Gallery navigation
   const hasGallery = images && images.length > 1 && currentIndex !== undefined && onNavigate;
@@ -65,12 +66,14 @@ export function Lightbox({
   const goToPrev = useCallback(() => {
     if (hasPrev && onNavigate && currentIndex !== undefined) {
       onNavigate(currentIndex - 1);
+      scrollContainerRef.current?.scrollTo({ top: 0 });
     }
   }, [hasPrev, onNavigate, currentIndex]);
 
   const goToNext = useCallback(() => {
     if (hasNext && onNavigate && currentIndex !== undefined) {
       onNavigate(currentIndex + 1);
+      scrollContainerRef.current?.scrollTo({ top: 0 });
     }
   }, [hasNext, onNavigate, currentIndex]);
 
@@ -177,7 +180,7 @@ export function Lightbox({
           </DialogHeader>
         )}
 
-        <div className="relative flex-1 min-h-0 bg-neutral-900 rounded-md flex items-center justify-center overflow-hidden overflow-y-auto">
+        <div ref={scrollContainerRef} className="relative flex-1 min-h-0 bg-neutral-900 rounded-md flex items-center justify-center overflow-hidden overflow-y-auto">
           {/* Previous Button */}
           {hasPrev && (
             <Button

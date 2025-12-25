@@ -34,3 +34,11 @@ export function normalizeHex(hex: string): string {
   }
   return normalized.toUpperCase();
 }
+
+export function getInitials(name: string): string {
+  return name
+    .split(/[\s&]+/)
+    .filter(word => word.length > 0)
+    .map(word => word[0].toUpperCase())
+    .join('');
+}

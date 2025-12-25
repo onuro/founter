@@ -11,7 +11,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { PREDEFINED_COLORS, isValidHex, normalizeHex } from '@/lib/colors';
+import { PREDEFINED_COLORS, isValidHex, normalizeHex, getInitials } from '@/lib/colors';
 import { cn } from '@/lib/utils';
 
 interface ColorButtonProps {
@@ -28,13 +28,17 @@ const ColorButton = memo(function ColorButton({ color, isSelected, onClick }: Co
         <button
           onClick={() => onClick(color.hex)}
           className={cn(
-            'aspect-square rounded-sm transition-all hover:scale-110',
+            'aspect-square rounded-sm transition-all hover:scale-110 flex items-center justify-center',
             isSelected
               ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-105'
               : 'hover:ring-1 hover:ring-muted-foreground/30'
           )}
           style={{ backgroundColor: color.hex }}
-        />
+        >
+          <span className="text-[10px] font-semibold text-white/80">
+            {getInitials(color.name)}
+          </span>
+        </button>
       </TooltipTrigger>
       <TooltipContent>
         <p>{color.name}</p>
