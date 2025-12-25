@@ -57,3 +57,25 @@ export const DEFAULT_SCROLL_OPTIONS: ScrollOptions = {
   scrollCount: 3,
   scrollDelay: 500,
 };
+
+// Job Queue API types (Crawl4AI v0.7.6+)
+export interface CrawlJobResponse {
+  task_id: string;
+  status?: string;
+}
+
+export interface CrawlTaskStatus {
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  result?: CrawlResult;
+  error?: string;
+}
+
+// Error response types
+export type CrawlErrorType = 'timeout' | 'network' | 'crawl_error' | 'unknown';
+
+export interface CrawlErrorResponse {
+  success: false;
+  error: string;
+  errorType?: CrawlErrorType;
+  suggestions?: string[];
+}

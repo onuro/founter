@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { CrawlResponse, ExtractedImage, ScrollOptions } from '@/types/crawl';
 import { parseCookieString } from '@/lib/cookies';
 
-const CRAWL4AI_URL = 'https://krawl.reaktorstudios.com/crawl';
+const CRAWL4AI_BASE = 'https://krawl.reaktorstudios.com';
+const POLL_INTERVAL = 2000; // 2 seconds
+const MAX_POLLS = 150; // 5 minutes total (150 * 2s = 300s)
+
+// Helper to sleep for polling
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Minimum width to filter out small icons/thumbnails
 const MIN_IMAGE_WIDTH = 700;
@@ -420,9 +425,6 @@ function deduplicateImages(images: ExtractedImage[]): ExtractedImage[] {
 }
 
 export async function POST(request: Request) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
-
   try {
     const body = await request.json();
     const { url, scrollOptions, cookies, loadMoreSelector } = body as {
@@ -433,7 +435,6 @@ export async function POST(request: Request) {
     };
 
     if (!url) {
-      clearTimeout(timeoutId);
       return NextResponse.json(
         { success: false, error: 'URL is required' },
         { status: 400 }
@@ -491,7 +492,8 @@ export async function POST(request: Request) {
       browserConfig.cookies = parsedCookies;
     }
 
-    const crawlResponse = await fetch(CRAWL4AI_URL, {
+    // Step 1: Submit crawl job (returns immediately with task_id)
+    const jobResponse = await fetch(`${CRAWL4AI_BASE}/crawl/job`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -502,44 +504,148 @@ export async function POST(request: Request) {
         crawler_config: crawlerConfig,
         browser_config: browserConfig,
       }),
-      signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
-    if (!crawlResponse.ok) {
-      const errorText = await crawlResponse.text().catch(() => 'No error details');
-      console.error(`Crawl4AI error: ${crawlResponse.status}`, errorText);
-
-      if (crawlResponse.status === 504) {
-        return NextResponse.json(
-          { success: false, error: 'The page took too long to crawl. This site may have bot protection.' },
-          { status: 500 }
-        );
-      }
-
+    if (!jobResponse.ok) {
+      const errorText = await jobResponse.text().catch(() => 'No error details');
+      console.error(`Crawl4AI job submit error: ${jobResponse.status}`, errorText);
       return NextResponse.json(
-        { success: false, error: `Crawl failed (${crawlResponse.status})` },
+        {
+          success: false,
+          error: `Failed to start crawl job (${jobResponse.status})`,
+          errorType: 'network',
+        },
         { status: 500 }
       );
     }
 
-    const data: CrawlResponse = await crawlResponse.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const jobData: any = await jobResponse.json();
+
+    // Check if results are returned immediately (fast crawls) or if we need to poll
+    let data: CrawlResponse;
+
+    if (jobData.results && Array.isArray(jobData.results)) {
+      // Results returned immediately - no polling needed
+      console.log('Crawl completed immediately, no polling needed');
+      data = { results: jobData.results, success: true };
+    } else if (jobData.result) {
+      // Single result returned immediately
+      console.log('Single result returned immediately');
+      data = { results: [jobData.result], success: true };
+    } else if (jobData.task_id) {
+      // Need to poll for results
+      const taskId = jobData.task_id;
+      console.log(`Polling for task: ${taskId}`);
+
+      // Step 2: Poll for completion
+      let pollCount = 0;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let taskResult: any = null;
+
+      while (pollCount < MAX_POLLS) {
+        await sleep(POLL_INTERVAL);
+        pollCount++;
+
+        try {
+          const statusResponse = await fetch(`${CRAWL4AI_BASE}/crawl/job/${taskId}`, {
+            method: 'GET',
+            headers: { 'Accept': 'application/json' },
+          });
+
+          if (!statusResponse.ok) {
+            console.error(`Task status error: ${statusResponse.status}`);
+            continue; // Keep polling on transient errors
+          }
+
+          taskResult = await statusResponse.json();
+          console.log('Task status response:', JSON.stringify(taskResult).slice(0, 500));
+
+          if (taskResult?.status === 'completed') {
+            console.log('Task completed! Result keys:', taskResult.result ? Object.keys(taskResult.result) : 'no result field');
+            break;
+          }
+
+          if (taskResult?.status === 'failed') {
+            return NextResponse.json(
+              {
+                success: false,
+                error: taskResult.error || 'Crawl job failed',
+                errorType: 'crawl_error',
+              },
+              { status: 500 }
+            );
+          }
+
+          // Continue polling for 'pending' or 'processing' status
+        } catch (pollError) {
+          console.error('Poll error:', pollError);
+          // Continue polling on transient errors
+        }
+      }
+
+      // Check if we timed out
+      if (!taskResult || taskResult.status !== 'completed') {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Request timed out after 5 minutes',
+            errorType: 'timeout',
+            suggestions: [
+              'This site may have heavy content or bot protection',
+              'Try disabling scroll options to reduce crawl time',
+              'Try a simpler page on the same site first',
+            ],
+          },
+          { status: 500 }
+        );
+      }
+
+      // The task response structure is: taskResult.result = { success, results: [...] }
+      if (taskResult.result?.results && Array.isArray(taskResult.result.results)) {
+        // Standard structure: result.results contains the crawl results
+        data = { results: taskResult.result.results, success: true };
+      } else if (taskResult.result?.success && taskResult.result) {
+        // If result is the crawl result itself (single result)
+        data = { results: [taskResult.result], success: true };
+      } else if (taskResult.results && Array.isArray(taskResult.results)) {
+        // Results directly on taskResult
+        data = { results: taskResult.results, success: true };
+      } else {
+        console.error('No result found in task response. Keys:', Object.keys(taskResult), 'result keys:', taskResult.result ? Object.keys(taskResult.result) : 'none');
+        data = { results: [], success: false };
+      }
+      console.log('Processed data - results count:', data.results.length);
+    } else {
+      // Unexpected response format
+      console.error('Unexpected response format:', JSON.stringify(jobData).slice(0, 500));
+      return NextResponse.json(
+        { success: false, error: 'Unexpected response from crawler', errorType: 'crawl_error' },
+        { status: 500 }
+      );
+    }
 
     if (!data.success || !data.results || data.results.length === 0) {
       return NextResponse.json(
-        { success: false, error: 'Failed to crawl the URL - no results returned' },
+        { success: false, error: 'Failed to crawl the URL - no results returned', errorType: 'crawl_error' },
         { status: 500 }
       );
     }
 
     const result = data.results[0];
+    console.log('Crawl result keys:', Object.keys(result));
+    console.log('Has html:', !!result.html, 'length:', result.html?.length || 0);
+    console.log('Has cleaned_html:', !!result.cleaned_html, 'length:', result.cleaned_html?.length || 0);
+    console.log('Has media.images:', !!result.media?.images, 'count:', result.media?.images?.length || 0);
+
     let images: ExtractedImage[] = [];
 
     // PRIORITY 1: Try HTML extraction first (better srcset handling)
     if (result.html) {
       images = extractImagesFromHtml(result.html);
+      console.log('Images from HTML extraction:', images.length);
       images = deduplicateImages(images);
+      console.log('After deduplication:', images.length);
     }
 
     // PRIORITY 2: Try cleaned_html if no images from raw html
@@ -595,6 +701,8 @@ export async function POST(request: Request) {
       }));
     }
 
+    console.log('Final image count:', images.length);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -608,18 +716,14 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    clearTimeout(timeoutId);
     console.error('Crawl error:', error);
 
-    if (error instanceof Error && error.name === 'AbortError') {
-      return NextResponse.json(
-        { success: false, error: 'Request timed out. The page may be too heavy or have bot protection.' },
-        { status: 500 }
-      );
-    }
-
     return NextResponse.json(
-      { success: false, error: 'Failed to crawl the URL' },
+      {
+        success: false,
+        error: 'Failed to crawl the URL',
+        errorType: 'unknown',
+      },
       { status: 500 }
     );
   }

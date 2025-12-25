@@ -18,8 +18,16 @@ import { toast } from 'sonner';
 import type { SitePreset } from '@/types/preset';
 import { Card } from '../ui/card';
 
+// Format seconds to "Xm Ys" or "Xs"
+function formatElapsedTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}m ${secs}s`;
+}
+
 export function FetcherLayout() {
-  const { images, isLoading, error, crawledUrl, scrollUsed, crawlUrl, clearResults } = useCrawl();
+  const { images, isLoading, error, crawledUrl, scrollUsed, elapsedSeconds, crawlUrl, clearResults } = useCrawl();
   const { items, addItem, removeItem, clearAll } = useHistory({
     key: 'fetcher-history',
     maxItems: 20,
@@ -162,18 +170,34 @@ export function FetcherLayout() {
 
             {/* Error State */}
             {error && (
-              <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20">
-                <p className="text-sm text-destructive">{error}</p>
+              <div className="p-4 rounded-md bg-destructive/10 border border-destructive/20 space-y-3">
+                <p className="text-sm text-destructive font-medium">{error.message}</p>
+                {error.type === 'timeout' && error.suggestions && error.suggestions.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground font-medium">What you can try:</p>
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      {error.suggestions.map((suggestion, i) => (
+                        <li key={i} className="flex items-start gap-2">
+                          <span className="text-muted-foreground/60">•</span>
+                          {suggestion}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
             {/* Loading State */}
             {isLoading && (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center justify-center py-12 gap-2">
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <Loader2 className="w-5 h-5 animate-spin" />
                   <span>Crawling page and extracting images...</span>
                 </div>
+                <span className="text-sm text-muted-foreground/60">
+                  Elapsed: {formatElapsedTime(elapsedSeconds)}
+                </span>
               </div>
             )}
 
