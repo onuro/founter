@@ -3,6 +3,9 @@ export interface CookieObject {
   value: string;
   domain: string;
   path: string;
+  secure?: boolean;
+  httpOnly?: boolean;
+  sameSite?: 'Strict' | 'Lax' | 'None';
 }
 
 /**
@@ -39,12 +42,31 @@ export function parseCookieString(cookieString: string): CookieObject[] {
 
       // Skip if any required field is empty
       if (name && value && domain) {
-        cookies.push({
+        // Parse optional flags from Chrome DevTools format
+        // Columns: name, value, domain, path, expires, size, httpOnly, secure, sameSite
+        const httpOnly = parts[6]?.trim() === '✓';
+        const secure = parts[7]?.trim() === '✓';
+        const sameSiteRaw = parts[8]?.trim();
+        const sameSite = sameSiteRaw === 'Strict' || sameSiteRaw === 'Lax' || sameSiteRaw === 'None'
+          ? sameSiteRaw
+          : undefined;
+
+        // Strip surrounding quotes from value (Chrome exports some values with quotes)
+        const cleanValue = value.replace(/^["']|["']$/g, '');
+
+        const cookie: CookieObject = {
           name,
-          value,
+          value: cleanValue,
           domain: domain.startsWith('.') ? domain : domain,
           path: path || '/',
-        });
+        };
+
+        // Only add optional fields if they have values (Playwright is strict about this)
+        if (secure) cookie.secure = true;
+        if (httpOnly) cookie.httpOnly = true;
+        if (sameSite) cookie.sameSite = sameSite;
+
+        cookies.push(cookie);
       }
     }
   }

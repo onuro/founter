@@ -55,9 +55,9 @@ export function MonitorFramePreview({ screenshotUrl, className }: MonitorFramePr
         className="absolute z-0 left-1/2 -translate-x-1/2 pointer-events-none select-none"
         style={{
           top: '86.67%', // After monitor body (11.11% + 77.67% - small overlap)
-          width: '16.67%',
+          width: '22%',
           height: '13.33%',
-          background: 'linear-gradient(180deg, #C1C1C3 0%, #D9D9DB 100%)',
+          background: 'linear-gradient(180deg, #999 30%, #D9D9DB 100%)',
           boxShadow: '0px 13px 20px -10px rgba(0, 0, 0, 0.3) inset',
         }}
       />

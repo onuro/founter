@@ -213,7 +213,7 @@ export function PresetFormDialog({
                   }
                   placeholder="e.g., button.load-more, [data-load-more]"
                   disabled={!crawlOptions.scroll.enabled || isSubmitting}
-                  className="font-mono text-xs"
+                  className="text-xs"
                 />
                 <p className="text-xs text-muted-foreground">
                   CSS selector for &quot;Load more&quot; button (for sites like Dribbble)
@@ -258,7 +258,7 @@ export function PresetFormDialog({
                     }
                     placeholder="_dribbble_session&#9;abc123...&#9;dribbble.com&#9;/&#9;Session..."
                     disabled={isSubmitting}
-                    className="w-full h-24 px-3 py-2 text-xs font-mono border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full h-24 px-3 py-2 text-xs border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
               )}

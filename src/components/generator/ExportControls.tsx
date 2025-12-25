@@ -64,7 +64,7 @@ export function ExportControls({
           <div className="space-y-3">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Quality</span>
-              <span className="font-mono text-foreground">{Math.round(quality * 100)}%</span>
+              <span className="text-foreground">{Math.round(quality * 100)}%</span>
             </div>
             <Slider
               value={[quality]}
@@ -81,9 +81,9 @@ export function ExportControls({
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Resolution</span>
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-mono ${!is2x ? 'text-foreground' : 'text-muted-foreground'}`}>1x</span>
+            <span className={`text-sm ${!is2x ? 'text-foreground' : 'text-muted-foreground'}`}>1x</span>
             <Switch checked={is2x} onCheckedChange={setIs2x} />
-            <span className={`text-sm font-mono ${is2x ? 'text-foreground' : 'text-muted-foreground'}`}>2x</span>
+            <span className={`text-sm ${is2x ? 'text-foreground' : 'text-muted-foreground'}`}>2x</span>
           </div>
         </div>
 
