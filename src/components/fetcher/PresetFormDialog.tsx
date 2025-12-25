@@ -12,6 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { SitePreset, CrawlOptions } from '@/types/preset';
 import { DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
 import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
@@ -96,7 +97,7 @@ export function PresetFormDialog({
 
   const handleScrollCountChange = (value: string) => {
     const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= 1 && num <= 30) {
+    if (!isNaN(num) && num >= 1 && num <= 100) {
       setCrawlOptions({
         ...crawlOptions,
         scroll: { ...crawlOptions.scroll, scrollCount: num },
@@ -118,7 +119,7 @@ export function PresetFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col overflow-clip overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Preset' : 'Add New Preset'}</DialogTitle>
           <DialogDescription>
@@ -128,143 +129,145 @@ export function PresetFormDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Label</label>
-            <Input
-              value={label}
-              onChange={(e) => setLabel(e.target.value)}
-              placeholder="e.g., Dribbble with 10 scrolls"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">URL</label>
-            <Input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          <div className="space-y-4 pt-2 border-t">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <label className="text-sm font-medium">Enable page scrolling</label>
-                <p className="text-xs text-muted-foreground">
-                  Scroll the page to load lazy-loaded images
-                </p>
-              </div>
-              <Switch
-                checked={crawlOptions.scroll.enabled}
-                onCheckedChange={(checked) =>
-                  setCrawlOptions({
-                    ...crawlOptions,
-                    scroll: { ...crawlOptions.scroll, enabled: checked },
-                  })
-                }
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1">
+          <div className="flex-1  space-y-4 py-2 space-y-6">
+            <div className="space-y-2">
+              <Label>Label</Label>
+              <Input
+                value={label}
+                onChange={(e) => setLabel(e.target.value)}
+                placeholder="e.g., Dribbble with 10 scrolls"
                 disabled={isSubmitting}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Scroll count (1-30)</label>
+              <Label>URL</Label>
               <Input
-                type="number"
-                min={1}
-                max={100}
-                value={crawlOptions.scroll.scrollCount}
-                onChange={(e) => handleScrollCountChange(e.target.value)}
-                disabled={!crawlOptions.scroll.enabled || isSubmitting}
-                className="w-24"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://example.com"
+                disabled={isSubmitting}
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Scroll delay (100-2000ms)</label>
-              <div className="flex items-center gap-2">
-                <Input
-                  type="number"
-                  min={100}
-                  max={2000}
-                  step={100}
-                  value={crawlOptions.scroll.scrollDelay}
-                  onChange={(e) => handleScrollDelayChange(e.target.value)}
-                  disabled={!crawlOptions.scroll.enabled || isSubmitting}
-                  className="w-24"
+            <div className="space-y-4 pt-2 border-t pt-8">
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>Enable page scrolling</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Scroll the page to load lazy-loaded images
+                  </p>
+                </div>
+                <Switch
+                  checked={crawlOptions.scroll.enabled}
+                  onCheckedChange={(checked) =>
+                    setCrawlOptions({
+                      ...crawlOptions,
+                      scroll: { ...crawlOptions.scroll, enabled: checked },
+                    })
+                  }
+                  disabled={isSubmitting}
                 />
-                <span className="text-sm text-muted-foreground">ms</span>
               </div>
-            </div>
+              <div className="flex gap-12 py-4 pt-6">
+                <div className="space-y-2">
+                  <Label>Scroll count (1-100)</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={crawlOptions.scroll.scrollCount}
+                    onChange={(e) => handleScrollCountChange(e.target.value)}
+                    disabled={!crawlOptions.scroll.enabled || isSubmitting}
+                    className="w-24"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Load more selector</label>
-              <Input
-                value={crawlOptions.loadMoreSelector || ''}
-                onChange={(e) =>
-                  setCrawlOptions({
-                    ...crawlOptions,
-                    loadMoreSelector: e.target.value || undefined,
-                  })
-                }
-                placeholder="e.g., button.load-more, [data-load-more]"
-                disabled={!crawlOptions.scroll.enabled || isSubmitting}
-                className="font-mono text-xs"
-              />
-              <p className="text-xs text-muted-foreground">
-                CSS selector for &quot;Load more&quot; button (for sites like Dribbble)
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-4 pt-2 border-t">
-            <button
-              type="button"
-              onClick={() => setShowCookies(!showCookies)}
-              className="flex items-center justify-between w-full text-left"
-              disabled={isSubmitting}
-            >
-              <div className="space-y-0.5">
-                <span className="text-sm font-medium">Authentication (Cookies)</span>
-                <p className="text-xs text-muted-foreground">
-                  {crawlOptions.cookies
-                    ? getCookieSummary(parseCookieString(crawlOptions.cookies))
-                    : 'Add cookies for authenticated access'}
-                </p>
+                <div className="space-y-2">
+                  <Label>Scroll delay (100-2000ms)</Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      min={100}
+                      max={2000}
+                      step={100}
+                      value={crawlOptions.scroll.scrollDelay}
+                      onChange={(e) => handleScrollDelayChange(e.target.value)}
+                      disabled={!crawlOptions.scroll.enabled || isSubmitting}
+                      className="w-24"
+                    />
+                    <span className="text-sm text-muted-foreground">ms</span>
+                  </div>
+                </div>
               </div>
-              {showCookies ? (
-                <ChevronUp className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              )}
-            </button>
-
-            {showCookies && (
               <div className="space-y-2">
-                <p className="text-xs text-muted-foreground">
-                  Paste cookies from Chrome DevTools → Application → Cookies → select all rows → Copy
-                </p>
-                <textarea
-                  value={crawlOptions.cookies || ''}
+                <Label>Load more selector</Label>
+                <Input
+                  value={crawlOptions.loadMoreSelector || ''}
                   onChange={(e) =>
                     setCrawlOptions({
                       ...crawlOptions,
-                      cookies: e.target.value || undefined,
+                      loadMoreSelector: e.target.value || undefined,
                     })
                   }
-                  placeholder="_dribbble_session&#9;abc123...&#9;dribbble.com&#9;/&#9;Session..."
-                  disabled={isSubmitting}
-                  className="w-full h-24 px-3 py-2 text-xs font-mono border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  placeholder="e.g., button.load-more, [data-load-more]"
+                  disabled={!crawlOptions.scroll.enabled || isSubmitting}
+                  className="font-mono text-xs"
                 />
+                <p className="text-xs text-muted-foreground">
+                  CSS selector for &quot;Load more&quot; button (for sites like Dribbble)
+                </p>
               </div>
-            )}
+            </div>
+
+            <div className="space-y-4 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setShowCookies(!showCookies)}
+                className="flex items-center justify-between w-full text-left"
+                disabled={isSubmitting}
+              >
+                <div className="space-y-0.5">
+                  <span className="text-sm font-medium">Authentication (Cookies)</span>
+                  <p className="text-xs text-muted-foreground">
+                    {crawlOptions.cookies
+                      ? getCookieSummary(parseCookieString(crawlOptions.cookies))
+                      : 'Add cookies for authenticated access'}
+                  </p>
+                </div>
+                {showCookies ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {showCookies && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    Paste cookies from Chrome DevTools → Application → Cookies → select all rows → Copy
+                  </p>
+                  <textarea
+                    value={crawlOptions.cookies || ''}
+                    onChange={(e) =>
+                      setCrawlOptions({
+                        ...crawlOptions,
+                        cookies: e.target.value || undefined,
+                      })
+                    }
+                    placeholder="_dribbble_session&#9;abc123...&#9;dribbble.com&#9;/&#9;Session..."
+                    disabled={isSubmitting}
+                    className="w-full h-24 px-3 py-2 text-xs font-mono border rounded-md bg-background resize-none focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+              )}
+            </div>
+
+            {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
 
-          {error && <p className="text-sm text-destructive">{error}</p>}
-
-          <DialogFooter>
+          <DialogFooter className="pt-4 border-t mt-4">
             <Button
               type="button"
               variant="outline"

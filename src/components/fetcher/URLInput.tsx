@@ -4,18 +4,19 @@ import { useState, FormEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Loader2, Search, X } from 'lucide-react';
+import { Loader2, Search, X, Bookmark } from 'lucide-react';
 
 interface URLInputProps {
   value: string;
   onChange: (url: string) => void;
   onSubmit: (url: string) => void;
   onClear: () => void;
+  onOpenPresets: () => void;
   isLoading: boolean;
   hasResults: boolean;
 }
 
-export function URLInput({ value, onChange, onSubmit, onClear, isLoading, hasResults }: URLInputProps) {
+export function URLInput({ value, onChange, onSubmit, onClear, onOpenPresets, isLoading, hasResults }: URLInputProps) {
   const [error, setError] = useState<string | null>(null);
 
   const validateUrl = (value: string): boolean => {
@@ -78,6 +79,16 @@ export function URLInput({ value, onChange, onSubmit, onClear, isLoading, hasRes
                 </button>
               )}
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={onOpenPresets}
+              title="Site presets"
+              className="cursor-pointer"
+            >
+              <Bookmark className="w-4 h-4" />
+            </Button>
             <Button type="submit" disabled={isLoading || !value.trim()} className="cursor-pointer">
               {isLoading ? (
                 <>

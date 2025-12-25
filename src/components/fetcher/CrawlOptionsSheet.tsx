@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { ScrollOptions } from '@/types/crawl';
 
 interface CrawlOptionsSheetProps {
@@ -28,7 +29,7 @@ export function CrawlOptionsSheet({
 }: CrawlOptionsSheetProps) {
   const handleScrollCountChange = (value: string) => {
     const num = parseInt(value, 10);
-    if (!isNaN(num) && num >= 1 && num <= 30) {
+    if (!isNaN(num) && num >= 1 && num <= 100) {
       onOptionsChange({ ...options, scrollCount: num });
     }
   };
@@ -50,11 +51,11 @@ export function CrawlOptionsSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 px-4 space-y-6">
+        <div className="flex-1 px-4 space-y-8">
           {/* Scroll Toggle */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <label className="text-sm font-medium">Enable page scrolling</label>
+              <Label>Enable page scrolling</Label>
               <p className="text-xs text-muted-foreground">
                 Scroll the page to load lazy-loaded images
               </p>
@@ -69,14 +70,14 @@ export function CrawlOptionsSheet({
 
           {/* Scroll Count */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Scroll count</label>
+            <Label>Scroll count</Label>
             <p className="text-xs text-muted-foreground">
-              Number of scroll actions (1-30)
+              Number of scroll actions (1-100)
             </p>
             <Input
               type="number"
               min={1}
-              max={30}
+              max={100}
               value={options.scrollCount}
               onChange={(e) => handleScrollCountChange(e.target.value)}
               disabled={!options.enabled}
@@ -86,7 +87,7 @@ export function CrawlOptionsSheet({
 
           {/* Scroll Delay */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Scroll delay</label>
+            <Label>Scroll delay</Label>
             <p className="text-xs text-muted-foreground">
               Delay between scrolls in milliseconds (100-2000)
             </p>

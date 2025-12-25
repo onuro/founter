@@ -213,9 +213,45 @@ function isValidCdnUrl(url: string): boolean {
   }
 }
 
+// Third-party service domains to filter out (cookie consent, analytics, chat widgets, etc.)
+const BLOCKED_DOMAINS = [
+  'cookieyes.com',
+  'cookiebot.com',
+  'onetrust.com',
+  'trustarc.com',
+  'intercom.io',
+  'intercomcdn.com',
+  'crisp.chat',
+  'drift.com',
+  'hubspot.com',
+  'hotjar.com',
+  'googletagmanager.com',
+  'google-analytics.com',
+  'facebook.com',
+  'fbcdn.net',
+  'twitter.com',
+  'linkedin.com',
+  'addthis.com',
+  'sharethis.com',
+  'disqus.com',
+  'gravatar.com',
+  'wp.com/latex',           // WordPress LaTeX images
+  'shields.io',             // GitHub badges
+  'badge.fury.io',          // Version badges
+  'img.shields.io',         // More badges
+  'badgen.net',             // Badges
+];
+
 // Check if URL is likely a small icon/utility image
 function isSmallUtilityImage(url: string): boolean {
   const lowercaseSrc = url.toLowerCase();
+
+  // Check for blocked third-party domains
+  for (const domain of BLOCKED_DOMAINS) {
+    if (lowercaseSrc.includes(domain)) {
+      return true;
+    }
+  }
 
   // Common small image path patterns
   if (
@@ -249,7 +285,10 @@ function isSmallUtilityImage(url: string): boolean {
     lowercaseSrc.includes('socialproof') ||  // Social proof testimonial images
     lowercaseSrc.includes('testimonial') ||  // Testimonial images
     lowercaseSrc.includes('/team/') ||       // Team member photos
-    lowercaseSrc.includes('/staff/')         // Staff photos
+    lowercaseSrc.includes('/staff/') ||      // Staff photos
+    lowercaseSrc.includes('poweredby') ||    // "Powered by" badges
+    lowercaseSrc.includes('powered-by') ||   // "Powered by" badges
+    lowercaseSrc.includes('powered_by')      // "Powered by" badges
   ) {
     return true;
   }
@@ -382,7 +421,7 @@ function deduplicateImages(images: ExtractedImage[]): ExtractedImage[] {
 
 export async function POST(request: Request) {
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+  const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
 
   try {
     const body = await request.json();
@@ -404,7 +443,7 @@ export async function POST(request: Request) {
     // Build crawler config with optional scroll settings
     const crawlerConfig: Record<string, unknown> = {
       wait_until: 'networkidle',
-      page_timeout: 60000,
+      page_timeout: 300000,
       wait_for_images: true,
     };
 
@@ -418,6 +457,8 @@ export async function POST(request: Request) {
         ? `
             const loadMoreBtn = document.querySelector('${loadMoreSelector.replace(/'/g, "\\'")}');
             if (loadMoreBtn) {
+              loadMoreBtn.scrollIntoView({ behavior: 'instant', block: 'center' });
+              await new Promise(r => setTimeout(r, 300));
               loadMoreBtn.click();
               await new Promise(r => setTimeout(r, ${scrollOptions.scrollDelay}));
             }

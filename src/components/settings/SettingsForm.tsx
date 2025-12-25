@@ -5,6 +5,7 @@ import { useSettings } from '@/hooks/useSettings';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Loader2, Save, Eye, EyeOff, Database, Brain } from 'lucide-react';
 
 export function SettingsForm() {
@@ -53,12 +54,12 @@ export function SettingsForm() {
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="baserowToken"
-              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
             >
               API Token
-            </label>
+            </Label>
             <div className="relative">
               <Input
                 id="baserowToken"
@@ -95,12 +96,12 @@ export function SettingsForm() {
         <CardContent className="space-y-4">
           {/* OpenAI */}
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="openaiKey"
-              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
             >
               OpenAI API Key
-            </label>
+            </Label>
             <div className="relative">
               <Input
                 id="openaiKey"
@@ -122,12 +123,12 @@ export function SettingsForm() {
 
           {/* Anthropic */}
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="anthropicKey"
-              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
             >
               Anthropic API Key
-            </label>
+            </Label>
             <div className="relative">
               <Input
                 id="anthropicKey"
@@ -149,12 +150,12 @@ export function SettingsForm() {
 
           {/* GLM */}
           <div className="space-y-2">
-            <label
+            <Label
               htmlFor="glmKey"
-              className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
             >
               GLM API Key
-            </label>
+            </Label>
             <div className="relative">
               <Input
                 id="glmKey"

@@ -76,7 +76,7 @@ export function PresetListItem({
             </span>
           )}
         </div>
-        <div className="flex flex-col items-start gap-0.5 min-w-0">
+        <div className="flex flex-col items-start gap-0.5 min-w-0 space-y-1">
           <span className="text-sm font-medium truncate w-full">
             {preset.label}
           </span>

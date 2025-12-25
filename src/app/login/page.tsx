@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 
 function LoginForm() {
@@ -65,12 +66,12 @@ function LoginForm() {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <label
+          <Label
             htmlFor="password"
-            className="text-xs font-medium uppercase tracking-wider text-muted-foreground"
+            className="text-xs uppercase tracking-wider text-muted-foreground"
           >
             Password
-          </label>
+          </Label>
           <div className="relative">
             <Input
               id="password"
@@ -105,12 +106,12 @@ function LoginForm() {
             className="w-4 h-4 rounded bg-input border-0 text-primary focus:ring-primary focus:ring-offset-background accent-primary"
             disabled={isLoading}
           />
-          <label
+          <Label
             htmlFor="rememberMe"
-            className="text-sm text-muted-foreground"
+            className="text-muted-foreground"
           >
             Remember me for 30 days
-          </label>
+          </Label>
         </div>
 
         {error && (

@@ -6,6 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { PREDEFINED_COLORS, isValidHex, normalizeHex } from '@/lib/colors';
 import { cn } from '@/lib/utils';
 
@@ -18,17 +23,23 @@ interface ColorButtonProps {
 // Memoized color button to prevent re-renders when typing in hex input
 const ColorButton = memo(function ColorButton({ color, isSelected, onClick }: ColorButtonProps) {
   return (
-    <button
-      onClick={() => onClick(color.hex)}
-      className={cn(
-        'aspect-square rounded-sm transition-all hover:scale-110',
-        isSelected
-          ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-105'
-          : 'hover:ring-1 hover:ring-muted-foreground/30'
-      )}
-      style={{ backgroundColor: color.hex }}
-      title={color.name}
-    />
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          onClick={() => onClick(color.hex)}
+          className={cn(
+            'aspect-square rounded-sm transition-all hover:scale-110',
+            isSelected
+              ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-105'
+              : 'hover:ring-1 hover:ring-muted-foreground/30'
+          )}
+          style={{ backgroundColor: color.hex }}
+        />
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{color.name}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 });
 

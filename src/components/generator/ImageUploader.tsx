@@ -91,30 +91,32 @@ export function ImageUploader({
             </div>
           </div>
         ) : (
-          <div
-            onClick={handleClick}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            className="rounded-sm p-8 text-center cursor-pointer transition-all bg-secondary hover:bg-secondary/80 border-2 border-dashed border-transparent hover:border-white/10"
-          >
-            {isLoading ? (
-              <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                <span className="text-muted-foreground">Loading...</span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Upload className="h-5 w-5 text-primary" />
+          <div className='bg-secondary p-1.5 rounded-md'>
+            <div
+              onClick={handleClick}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              className="rounded-sm p-8 text-center cursor-pointer shadow-inset-emboss-soft transition-all bg-muted hover:bg-neutral-900 hover:shadow-inset-emboss active:bg-muted active:shadow-none"
+            >
+              {isLoading ? (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+                  <span className="text-muted-foreground">Loading...</span>
                 </div>
-                <div className="space-y-1">
-                  <p className="text-sm font-medium">Drop image or click to browse</p>
-                  <p className="text-xs text-muted-foreground">
-                    PNG, JPG, WebP up to 10MB
-                  </p>
+              ) : (
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center">
+                    <Upload className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Drop image or click to browse</p>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG, WebP up to 10MB
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
 

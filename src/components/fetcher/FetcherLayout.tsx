@@ -12,7 +12,7 @@ import { usePresets } from '@/hooks/usePresets';
 import { HistorySheet } from '@/components/ui/history-sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, History, Settings, ImageIcon, FileText, Bookmark } from 'lucide-react';
+import { Loader2, History, Settings, ImageIcon, FileText } from 'lucide-react';
 import { ScrollOptions, DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
 import { toast } from 'sonner';
 import type { SitePreset } from '@/types/preset';
@@ -116,15 +116,6 @@ export function FetcherLayout() {
             <Button
               variant="outline"
               size="icon"
-              onClick={openPresets}
-              title="Site presets"
-              className="cursor-pointer"
-            >
-              <Bookmark className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
               onClick={openOptions}
               title="Crawl options"
               className="cursor-pointer"
@@ -164,6 +155,7 @@ export function FetcherLayout() {
               onChange={setInputUrl}
               onSubmit={handleCrawl}
               onClear={handleClearResults}
+              onOpenPresets={openPresets}
               isLoading={isLoading}
               hasResults={images.length > 0}
             />

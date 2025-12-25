@@ -82,7 +82,7 @@ export function PresetsSheet({
             </SheetDescription>
           </SheetHeader>
 
-          <div className="flex-1 overflow-y-auto py-4">
+          <div className="flex-1 overflow-y-auto pb-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-32">
                 <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />

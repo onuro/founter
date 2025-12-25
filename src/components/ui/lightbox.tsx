@@ -187,7 +187,7 @@ export function Lightbox({
               onClick={goToPrev}
               title="Previous image (←)"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-6 h-6 text-white" />
             </Button>
           )}
 
@@ -225,7 +225,7 @@ export function Lightbox({
               onClick={goToNext}
               title="Next image (→)"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-6 h-6 text-white" />
             </Button>
           )}
 
