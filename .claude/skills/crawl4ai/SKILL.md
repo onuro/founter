@@ -47,6 +47,7 @@ python scripts/batch_crawler.py urls.txt
 # Data extraction
 python scripts/extraction_pipeline.py --generate-schema https://shop.com "extract products"
 ```
+When taking references from the provided scripts, please make sure to adjust the logic to match my stack and the way I use Crawl4AI.
 
 ## Core Crawling Fundamentals
 

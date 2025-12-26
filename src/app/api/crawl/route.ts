@@ -1,6 +1,20 @@
 import { NextResponse } from 'next/server';
 import { CrawlResponse, ExtractedImage, ScrollOptions } from '@/types/crawl';
 import { parseCookieString } from '@/lib/cookies';
+import {
+  extractImagesFromHtml,
+  extractImageLinks,
+  deduplicateImages,
+} from '@/lib/crawl/image-extraction';
+import {
+  getCleanImageUrl,
+  extractWidthFromUrl,
+  isValidCdnUrl,
+} from '@/lib/crawl/url-utils';
+import {
+  MIN_IMAGE_WIDTH,
+  isSmallUtilityImage,
+} from '@/lib/crawl/image-filter';
 
 const CRAWL4AI_BASE = 'https://krawl.reaktorstudios.com';
 const POLL_INTERVAL = 2000; // 2 seconds
@@ -8,421 +22,6 @@ const MAX_POLLS = 150; // 5 minutes total (150 * 2s = 300s)
 
 // Helper to sleep for polling
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Minimum width to filter out small icons/thumbnails
-const MIN_IMAGE_WIDTH = 700;
-
-// Strip query parameters from URL to get full resolution image
-function stripQueryParams(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.origin + urlObj.pathname;
-  } catch {
-    // If URL parsing fails, try simple string split
-    return url.split('?')[0];
-  }
-}
-
-// Clean Cloudflare CDN URL by removing width/height params but keeping other optimizations
-// Input:  /cdn-cgi/image/width=390,height=520,fit=cover,format=jpg,quality=85/path/image.jpg
-// Output: /cdn-cgi/image/fit=cover,format=jpg,quality=85/path/image.jpg
-function cleanCdnUrl(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-
-    // Check for Cloudflare CDN pattern
-    const cfMatch = pathname.match(/^(\/cdn-cgi\/image\/)([^/]+)(\/.*)?$/);
-    if (cfMatch) {
-      const prefix = cfMatch[1];         // /cdn-cgi/image/
-      const params = cfMatch[2];         // width=390,height=520,fit=cover,...
-      const imagePath = cfMatch[3] || ''; // /wp-content/uploads/.../image.jpg
-
-      // Remove width and height params, keep the rest
-      const cleanedParams = params
-        .split(',')
-        .filter(p => !p.startsWith('width=') && !p.startsWith('height='))
-        .join(',');
-
-      // Reconstruct URL with cleaned params
-      if (cleanedParams) {
-        return urlObj.origin + prefix + cleanedParams + imagePath;
-      } else {
-        // If no params left, just return the image path
-        return urlObj.origin + imagePath;
-      }
-    }
-
-    return url;
-  } catch {
-    return url;
-  }
-}
-
-// Get clean image URL by cleaning CDN params and stripping query params
-function getCleanImageUrl(url: string): string {
-  // First clean CDN URL (remove width/height but keep other params)
-  const cleanedUrl = cleanCdnUrl(url);
-  // Then strip any query parameters
-  return stripQueryParams(cleanedUrl);
-}
-
-interface SrcsetEntry {
-  url: string;
-  width: number;
-}
-
-// Normalize URL to find duplicate images served at different sizes
-// This strips size-related patterns to get a "base" identifier for the same image
-function getBaseImageUrl(url: string): string {
-  return url
-    // Dribbble patterns: teaser-, normal-, original-
-    .replace(/\/(teaser|normal|original|small|medium|large|mini|tiny|preview)-/gi, '/BASE-')
-    // Common size suffixes: _800x600, -800x600
-    .replace(/[_-]\d+x\d+/g, '')
-    // Width patterns: _800w, -800w
-    .replace(/[_-]\d+w\b/g, '')
-    // DPR patterns: @2x, _2x, -2x, @3x
-    .replace(/[@_-][123]x(?=\.|$)/gi, '')
-    // Query params: ?w=800, &h=600, ?size=large, ?resize=800x600
-    .replace(/[?&](w|h|width|height|size|resize|quality|q)=[^&]*/gi, '')
-    // Path segments with sizes: /800x600/, /w_800/
-    .replace(/\/\d+x\d+\//g, '/SIZE/')
-    .replace(/\/w_\d+\//g, '/SIZE/')
-    // Cloudinary/imgix transforms
-    .replace(/\/c_[^/]+/g, '')
-    .replace(/\/f_[^/]+/g, '')
-    .toLowerCase();
-}
-
-// Determine which URL is likely the larger/original image
-function getLargerImageUrl(url1: string, url2: string): string {
-  const lower1 = url1.toLowerCase();
-  const lower2 = url2.toLowerCase();
-
-  // Prefer "original"
-  if (lower1.includes('/original-') || lower1.includes('/original/')) return url1;
-  if (lower2.includes('/original-') || lower2.includes('/original/')) return url2;
-
-  // Prefer "large"
-  if (lower1.includes('/large-') || lower1.includes('/large/')) return url1;
-  if (lower2.includes('/large-') || lower2.includes('/large/')) return url2;
-
-  // Avoid "teaser", "mini", "tiny", "small", "preview", "thumb"
-  const smallPatterns = ['/teaser-', '/mini-', '/tiny-', '/small-', '/preview-', '/thumb'];
-  const isSmall1 = smallPatterns.some(p => lower1.includes(p));
-  const isSmall2 = smallPatterns.some(p => lower2.includes(p));
-  if (isSmall1 && !isSmall2) return url2;
-  if (isSmall2 && !isSmall1) return url1;
-
-  // Extract and compare widths from URL
-  const width1 = extractWidthFromUrl(url1);
-  const width2 = extractWidthFromUrl(url2);
-  if (width1 && width2) return width1 > width2 ? url1 : url2;
-  if (width1 && !width2) return url1;
-  if (width2 && !width1) return url2;
-
-  // Check DPR (@2x, @3x, etc.)
-  const dpr1 = parseInt(url1.match(/[@_-](\d)x(?=\.|$)/i)?.[1] || '1', 10);
-  const dpr2 = parseInt(url2.match(/[@_-](\d)x(?=\.|$)/i)?.[1] || '1', 10);
-  if (dpr1 !== dpr2) return dpr1 > dpr2 ? url1 : url2;
-
-  // Default to first
-  return url1;
-}
-
-// Parse srcset attribute and return the largest image URL
-// Handles URLs with commas (like Cloudflare CDN params)
-function parseSrcset(srcset: string): SrcsetEntry | null {
-  if (!srcset) return null;
-
-  const entries: SrcsetEntry[] = [];
-
-  // Split on descriptor patterns (1x, 2x, 100w, etc.) followed by comma or end
-  // This handles URLs that contain commas (like Cloudflare CDN params)
-  const regex = /(\S+)\s+(\d+(?:\.\d+)?)(x|w)(?:,\s*|$)/g;
-  let match;
-
-  while ((match = regex.exec(srcset)) !== null) {
-    const url = match[1];
-    const value = parseFloat(match[2]);
-    const unit = match[3];
-
-    if (unit === 'w') {
-      entries.push({ url, width: value });
-    } else {
-      // x descriptor - treat as multiplier (assume base 100 for comparison)
-      entries.push({ url, width: Math.round(value * 100) });
-    }
-  }
-
-  if (entries.length === 0) return null;
-
-  // Return the entry with the largest width
-  return entries.reduce((max, entry) => entry.width > max.width ? entry : max);
-}
-
-// Extract width from URL patterns like "_200x150" or "-200w"
-function extractWidthFromUrl(url: string): number | null {
-  // Cloudflare CDN pattern: /cdn-cgi/image/width=XXX
-  const cfWidthMatch = url.match(/\/cdn-cgi\/image\/[^/]*width=(\d+)/);
-  if (cfWidthMatch) {
-    return parseInt(cfWidthMatch[1], 10);
-  }
-  // Pattern: resize=WIDTHxHEIGHT (Dribbble/imgix style)
-  const resizeMatch = url.match(/resize=(\d+)x\d+/);
-  if (resizeMatch) {
-    return parseInt(resizeMatch[1], 10);
-  }
-  // Pattern: /WIDTHx0/ or /WIDTHxHEIGHT/ in path (land-book.com style)
-  const pathSizeMatch = url.match(/\/(\d+)x\d+\//);
-  if (pathSizeMatch) {
-    return parseInt(pathSizeMatch[1], 10);
-  }
-  // Pattern: _WIDTHxHEIGHT or -WIDTHxHEIGHT
-  const sizeMatch = url.match(/[_-](\d+)x\d+/);
-  if (sizeMatch) {
-    return parseInt(sizeMatch[1], 10);
-  }
-  // Pattern: -WIDTHw or _WIDTHw
-  const widthMatch = url.match(/[_-](\d+)w/);
-  if (widthMatch) {
-    return parseInt(widthMatch[1], 10);
-  }
-  // Pattern: ?w=WIDTH or &w=WIDTH
-  const queryMatch = url.match(/[?&]w=(\d+)/);
-  if (queryMatch) {
-    return parseInt(queryMatch[1], 10);
-  }
-  return null;
-}
-
-// Check if a Cloudflare CDN URL is valid (has actual image path after params)
-function isValidCdnUrl(url: string): boolean {
-  try {
-    const urlObj = new URL(url);
-    const pathname = urlObj.pathname;
-
-    // Check for Cloudflare CDN pattern
-    if (pathname.startsWith('/cdn-cgi/image/')) {
-      // Valid CDN URL should have actual path after params: /cdn-cgi/image/params/actual/path.jpg
-      // Invalid (truncated): /cdn-cgi/image/width=780 (no image path)
-      const afterCdn = pathname.replace(/^\/cdn-cgi\/image\/[^/]+/, '');
-      // Must have a path after the CDN params
-      return afterCdn.length > 0 && afterCdn.startsWith('/');
-    }
-
-    return true; // Non-CDN URLs pass through
-  } catch {
-    return false;
-  }
-}
-
-// Third-party service domains to filter out (cookie consent, analytics, chat widgets, etc.)
-const BLOCKED_DOMAINS = [
-  'cookieyes.com',
-  'cookiebot.com',
-  'onetrust.com',
-  'trustarc.com',
-  'intercom.io',
-  'intercomcdn.com',
-  'crisp.chat',
-  'drift.com',
-  'hubspot.com',
-  'hotjar.com',
-  'googletagmanager.com',
-  'google-analytics.com',
-  'facebook.com',
-  'fbcdn.net',
-  'twitter.com',
-  'linkedin.com',
-  'addthis.com',
-  'sharethis.com',
-  'disqus.com',
-  'gravatar.com',
-  'wp.com/latex',           // WordPress LaTeX images
-  'shields.io',             // GitHub badges
-  'badge.fury.io',          // Version badges
-  'img.shields.io',         // More badges
-  'badgen.net',             // Badges
-];
-
-// Check if URL is likely a small icon/utility image
-function isSmallUtilityImage(url: string): boolean {
-  const lowercaseSrc = url.toLowerCase();
-
-  // Check for blocked third-party domains
-  for (const domain of BLOCKED_DOMAINS) {
-    if (lowercaseSrc.includes(domain)) {
-      return true;
-    }
-  }
-
-  // Common small image path patterns
-  if (
-    lowercaseSrc.includes('/icon') ||
-    lowercaseSrc.includes('/favicon') ||
-    lowercaseSrc.includes('/logo') ||
-    lowercaseSrc.includes('/avatar') ||
-    lowercaseSrc.includes('/badge') ||
-    lowercaseSrc.includes('/emoji') ||
-    lowercaseSrc.includes('1x1') ||
-    lowercaseSrc.includes('pixel') ||
-    lowercaseSrc.includes('/spinner') ||
-    lowercaseSrc.includes('/loader') ||
-    lowercaseSrc.includes('/users/') ||      // User profile images
-    lowercaseSrc.includes('/profile') ||     // Profile images
-    lowercaseSrc.includes('/member') ||      // Member avatars
-    lowercaseSrc.includes('/author') ||      // Author thumbnails
-    lowercaseSrc.includes('/thumb') ||       // Thumbnails
-    lowercaseSrc.includes('_thumb') ||       // Thumbnails
-    lowercaseSrc.includes('-thumb') ||       // Thumbnails
-    lowercaseSrc.includes('/mini') ||        // Mini images
-    lowercaseSrc.includes('_mini') ||        // Mini images
-    lowercaseSrc.includes('/mini-') ||       // Mini images (Dribbble style)
-    lowercaseSrc.includes('/small') ||       // Small variants
-    lowercaseSrc.includes('_small') ||       // Small variants
-    lowercaseSrc.includes('-small') ||       // Small variants
-    lowercaseSrc.includes('/small-') ||      // Small variants (Dribbble style)
-    lowercaseSrc.includes('/teaser-') ||     // Dribbble teaser thumbnails
-    lowercaseSrc.includes('/tiny-') ||       // Tiny images
-    lowercaseSrc.includes('/preview-') ||    // Preview thumbnails
-    lowercaseSrc.includes('socialproof') ||  // Social proof testimonial images
-    lowercaseSrc.includes('testimonial') ||  // Testimonial images
-    lowercaseSrc.includes('/team/') ||       // Team member photos
-    lowercaseSrc.includes('/staff/') ||      // Staff photos
-    lowercaseSrc.includes('poweredby') ||    // "Powered by" badges
-    lowercaseSrc.includes('powered-by') ||   // "Powered by" badges
-    lowercaseSrc.includes('powered_by')      // "Powered by" badges
-  ) {
-    return true;
-  }
-
-  // Check for small dimension patterns in URL
-  // Patterns: resize=400x300, /600x0/, _400x300, -400x300
-  const width = extractWidthFromUrl(url);
-  if (width && width < MIN_IMAGE_WIDTH) {
-    return true;
-  }
-
-  return false;
-}
-
-function extractImagesFromHtml(html: string): ExtractedImage[] {
-  const images: ExtractedImage[] = [];
-  // Use Set for O(1) deduplication instead of O(n) .some() check
-  const seenUrls = new Set<string>();
-
-  // Match all img tags
-  const imgTagRegex = /<img[^>]*>/gi;
-  let tagMatch;
-
-  while ((tagMatch = imgTagRegex.exec(html)) !== null) {
-    const imgTag = tagMatch[0];
-
-    // Extract src
-    const srcMatch = imgTag.match(/\bsrc=["']([^"']+)["']/i);
-    const src = srcMatch ? srcMatch[1] : null;
-
-    // Extract srcset
-    const srcsetMatch = imgTag.match(/\bsrcset=["']([^"']+)["']/i);
-    const srcset = srcsetMatch ? srcsetMatch[1] : null;
-
-    // Extract alt
-    const altMatch = imgTag.match(/\balt=["']([^"']*)["']/i);
-    const alt = altMatch ? altMatch[1] : '';
-
-    // Extract width attribute
-    const widthAttrMatch = imgTag.match(/\bwidth=["']?(\d+)["']?/i);
-    const widthAttr = widthAttrMatch ? parseInt(widthAttrMatch[1], 10) : null;
-
-    let finalSrc = src;
-    let imageWidth = widthAttr;
-
-    // If srcset exists, try to get the largest image
-    if (srcset) {
-      const largest = parseSrcset(srcset);
-      if (largest && largest.url) {
-        let largestUrl = largest.url;
-        // Handle protocol-relative URLs
-        if (largestUrl.startsWith('//')) {
-          largestUrl = 'https:' + largestUrl;
-        }
-        if (largestUrl.startsWith('http://') || largestUrl.startsWith('https://')) {
-          finalSrc = largestUrl;
-          // Don't use srcset descriptor value (e.g., 200 for 2x) as pixel width
-          // Extract actual width from URL instead, or keep the HTML width attribute
-          const urlWidth = extractWidthFromUrl(largestUrl);
-          if (urlWidth) {
-            imageWidth = urlWidth;
-          }
-          // If no width in URL and no HTML attribute, leave imageWidth as null
-          // to skip the MIN_IMAGE_WIDTH filter
-        }
-      }
-    }
-
-    // Validate URL
-    if (!finalSrc || (!finalSrc.startsWith('http://') && !finalSrc.startsWith('https://'))) {
-      continue;
-    }
-
-    // Skip truncated/invalid CDN URLs
-    if (!isValidCdnUrl(finalSrc)) {
-      continue;
-    }
-
-    // Try to extract width from URL if we don't have it
-    if (!imageWidth) {
-      imageWidth = extractWidthFromUrl(finalSrc);
-    }
-
-    // Filter out small images if we know the width
-    if (imageWidth && imageWidth < MIN_IMAGE_WIDTH) {
-      continue;
-    }
-
-    // Skip common icon/utility image patterns
-    if (isSmallUtilityImage(finalSrc)) {
-      continue;
-    }
-
-    // Get clean URL (extract original from CDN + strip query params) and deduplicate with O(1) Set lookup
-    const cleanSrc = getCleanImageUrl(finalSrc);
-    if (!seenUrls.has(cleanSrc)) {
-      seenUrls.add(cleanSrc);
-      images.push({
-        src: cleanSrc,
-        alt,
-        width: imageWidth || undefined
-      });
-    }
-  }
-
-  return images;
-}
-
-function deduplicateImages(images: ExtractedImage[]): ExtractedImage[] {
-  // Group images by their normalized base URL
-  const baseUrlMap = new Map<string, ExtractedImage>();
-
-  for (const img of images) {
-    const baseUrl = getBaseImageUrl(img.src);
-    const existing = baseUrlMap.get(baseUrl);
-
-    if (!existing) {
-      baseUrlMap.set(baseUrl, img);
-    } else {
-      // Keep the larger version
-      const largerUrl = getLargerImageUrl(existing.src, img.src);
-      if (largerUrl === img.src) {
-        baseUrlMap.set(baseUrl, img);
-      }
-    }
-  }
-
-  return Array.from(baseUrlMap.values());
-}
 
 export async function POST(request: Request) {
   try {
@@ -699,6 +298,24 @@ export async function POST(request: Request) {
         alt: img.alt || img.desc || '',
         width: width || undefined,
       }));
+    }
+
+    // Extract links from <a> tags that wrap images (two-pass approach - doesn't affect image extraction)
+    let imageLinks = new Map<string, string>();
+    if (result.html) {
+      imageLinks = extractImageLinks(result.html, result.url);
+      console.log('Found image links:', imageLinks.size);
+    }
+
+    // Merge links into images
+    if (imageLinks.size > 0) {
+      for (const img of images) {
+        const link = imageLinks.get(img.src);
+        if (link) {
+          img.link = link;
+        }
+      }
+      console.log('Images with links:', images.filter(img => img.link).length);
     }
 
     console.log('Final image count:', images.length);

@@ -9,11 +9,12 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, ExternalLink, Maximize2, Minimize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Copy, Check, ExternalLink, Maximize2, Minimize2, ChevronLeft, ChevronRight, Link2 } from 'lucide-react';
 
 export interface LightboxImage {
   src: string;
   alt?: string;
+  link?: string;  // href from parent <a> tag
 }
 
 interface LightboxProps {
@@ -118,6 +119,26 @@ export function Lightbox({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [open]);
+
+  // Preload adjacent images for smoother navigation
+  useEffect(() => {
+    if (!images || !hasGallery || currentIndex === undefined) return;
+
+    const preloadImage = (src: string) => {
+      const img = new window.Image();
+      img.src = src;
+    };
+
+    // Preload next image
+    if (currentIndex < images.length - 1) {
+      preloadImage(images[currentIndex + 1].src);
+    }
+
+    // Preload previous image (for back navigation)
+    if (currentIndex > 0) {
+      preloadImage(images[currentIndex - 1].src);
+    }
+  }, [images, currentIndex, hasGallery]);
 
   const handleClose = useCallback(
     (open: boolean) => {
@@ -241,47 +262,63 @@ export function Lightbox({
         </div>
 
         {showFooter && (
-          <div className="flex items-center justify-between gap-4 flex-shrink-0 pt-2">
-            <p className="text-xs text-muted-foreground truncate flex-1">
-              {image.src}
-            </p>
-            {showFooterButtons && (
-              <div className="flex items-center gap-2 flex-shrink-0">
-                {showCopyButton && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="cursor-pointer"
-                    onClick={copyToClipboard}
-                  >
-                    {copied ? (
-                      <>
-                        <Check className="w-3 h-3" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-3 h-3" />
-                        Copy URL
-                      </>
-                    )}
-                  </Button>
-                )}
-                {showOpenButton && (
-                  <a
-                    href={image.src}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex"
-                  >
-                    <Button size="sm" variant="outline" className="cursor-pointer">
-                      <ExternalLink className="w-3 h-3" />
-                      Open
-                    </Button>
-                  </a>
-                )}
+          <div className="flex flex-col gap-2 flex-shrink-0 pt-2">
+            {/* Image link (from parent <a> tag) */}
+            {image.link && (
+              <div className="flex items-center gap-2 px-2 py-1.5 bg-muted/50 rounded-md">
+                <Link2 className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                <a
+                  href={image.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary hover:underline truncate flex-1"
+                >
+                  {image.link}
+                </a>
               </div>
             )}
+            <div className="flex items-center justify-between gap-4">
+              <p className="text-xs text-muted-foreground truncate flex-1">
+                {image.src}
+              </p>
+              {showFooterButtons && (
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {showCopyButton && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="cursor-pointer"
+                      onClick={copyToClipboard}
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-3 h-3" />
+                          Copy URL
+                        </>
+                      )}
+                    </Button>
+                  )}
+                  {showOpenButton && (
+                    <a
+                      href={image.src}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex"
+                    >
+                      <Button size="sm" variant="outline" className="cursor-pointer">
+                        <ExternalLink className="w-3 h-3" />
+                        Open
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </DialogContent>

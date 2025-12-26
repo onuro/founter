@@ -38,6 +38,7 @@ export interface ExtractedImage {
   src: string;
   alt?: string;
   width?: number;
+  link?: string;  // href from parent <a> tag
 }
 
 export interface CrawlState {

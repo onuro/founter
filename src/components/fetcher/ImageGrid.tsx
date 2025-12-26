@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbox, useLightbox } from '@/components/ui/lightbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Copy, Check, ExternalLink, ImageIcon, LayoutGrid } from 'lucide-react';
+import { Copy, Check, ExternalLink, ImageIcon, LayoutGrid, Link2 } from 'lucide-react';
 
 const COLUMN_OPTIONS = [2, 3, 4, 5, 6, 8] as const;
 
@@ -59,7 +59,7 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
 
   // Convert images to LightboxImage format
   const allLightboxImages = useMemo(
-    () => images.map(img => ({ src: img.src, alt: img.alt })),
+    () => images.map(img => ({ src: img.src, alt: img.alt, link: img.link })),
     [images]
   );
 
@@ -178,59 +178,82 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
               const isFailed = failedImages.has(image.src);
 
               return (
-                <div
-                  key={`${image.src}-${index}`}
-                  className="group relative bg-neutral-900 rounded-md overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-colors"
-                  style={{ aspectRatio }}
-                >
-                  {/* Thumbnail */}
-                  <button
-                    onClick={() => openLightbox(
-                      { src: image.src, alt: image.alt },
-                      allLightboxImages,
-                      index
-                    )}
-                    className="w-full h-full cursor-pointer"
+                <div className="bg-secondary p-1 rounded-lg">
+                  <div
+                    key={`${image.src}-${index}`}
+                    className="group relative bg-surface rounded-md overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-colors"
+                    style={{ aspectRatio }}
                   >
-                    {isFailed ? (
-                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                        <ImageIcon className="w-8 h-8 opacity-50" />
-                      </div>
-                    ) : (
-                      <Image
-                        src={image.src}
-                        alt={image.alt || `Image ${index + 1}`}
-                        fill
-                        className="object-cover object-top transition-transform group-hover:scale-105 ease-out-expo duration-500"
-                        sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-                        onError={() => handleImageError(image.src)}
-                      />
-                    )}
-                  </button>
-
-                  {/* Copy button overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="w-full h-7 text-xs cursor-pointer"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyToClipboard(image.src, index);
-                      }}
-                    >
-                      {copiedIndex === index ? (
-                        <>
-                          <Check className="w-3 h-3" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-3 h-3" />
-                          Copy URL
-                        </>
+                    {/* Thumbnail */}
+                    <button
+                      onClick={() => openLightbox(
+                        { src: image.src, alt: image.alt, link: image.link },
+                        allLightboxImages,
+                        index
                       )}
-                    </Button>
+                      className="w-full h-full cursor-pointer"
+                    >
+                      {isFailed ? (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                          <ImageIcon className="w-8 h-8 opacity-50" />
+                        </div>
+                      ) : (
+                        <Image
+                          src={image.src}
+                          alt={image.alt || `Image ${index + 1}`}
+                          fill
+                          loader={({ src }) => `/_next/image?url=${encodeURIComponent(src)}&w=640&q=75`}
+                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                          className="object-cover object-top transition-transform group-hover:scale-105 ease-out-expo duration-500"
+                          onError={() => handleImageError(image.src)}
+                        />
+                      )}
+                    </button>
+
+                    {/* Action buttons overlay */}
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex gap-1">
+                        {image.link && (
+                          <a
+                            href={image.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="w-full h-7 text-xs cursor-pointer"
+                            >
+                              <Link2 className="w-3 h-3" />
+                              Open Link
+                            </Button>
+                          </a>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className={`h-7 text-xs cursor-pointer ${image.link ? 'flex-1' : 'w-full'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(image.src, index);
+                          }}
+                        >
+                          {copiedIndex === index ? (
+                            <>
+                              <Check className="w-3 h-3" />
+                              Copied!
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3 h-3" />
+                              Copy URL
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               );
