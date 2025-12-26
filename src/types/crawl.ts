@@ -71,6 +71,9 @@ export interface CrawlTaskStatus {
   error?: string;
 }
 
+// Crawl phases for live status updates
+export type CrawlPhase = 'submitting' | 'loading' | 'scrolling' | 'extracting' | 'complete';
+
 // Error response types
 export type CrawlErrorType = 'timeout' | 'network' | 'crawl_error' | 'unknown';
 

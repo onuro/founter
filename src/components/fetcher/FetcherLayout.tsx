@@ -13,7 +13,7 @@ import { HistorySheet } from '@/components/ui/history-sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, History, Settings, ImageIcon, FileText } from 'lucide-react';
-import { ScrollOptions, DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
+import { ScrollOptions, DEFAULT_SCROLL_OPTIONS, CrawlPhase } from '@/types/crawl';
 import { toast } from 'sonner';
 import type { SitePreset, GridOptions } from '@/types/preset';
 import { Card } from '../ui/card';
@@ -26,8 +26,17 @@ function formatElapsedTime(seconds: number): string {
   return `${mins}m ${secs}s`;
 }
 
+// Phase messages for live status updates
+const phaseMessages: Record<CrawlPhase, string> = {
+  submitting: 'Submitting crawl job...',
+  loading: 'Loading page content...',
+  scrolling: 'Scrolling page & loading images...',
+  extracting: 'Extracting images...',
+  complete: 'Complete!',
+};
+
 export function FetcherLayout() {
-  const { images, isLoading, error, crawledUrl, scrollUsed, elapsedSeconds, crawlUrl, clearResults } = useCrawl();
+  const { images, isLoading, error, crawledUrl, scrollUsed, elapsedSeconds, phase, crawlUrl, clearResults } = useCrawl();
   const { items, addItem, removeItem, clearAll } = useHistory({
     key: 'fetcher-history',
     maxItems: 20,
@@ -214,7 +223,7 @@ export function FetcherLayout() {
               <div className="flex flex-col items-center justify-center py-12 gap-2">
                 <div className="flex items-center gap-3 text-muted-foreground">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Crawling page and extracting images...</span>
+                  <span>{phaseMessages[phase]}</span>
                 </div>
                 <span className="text-sm text-muted-foreground/60">
                   Elapsed: {formatElapsedTime(elapsedSeconds)}

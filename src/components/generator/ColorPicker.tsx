@@ -30,7 +30,7 @@ const ColorButton = memo(function ColorButton({ color, isSelected, onClick }: Co
           className={cn(
             'aspect-square rounded-sm transition-all hover:scale-110 flex items-center justify-center',
             isSelected
-              ? 'ring-2 ring-primary ring-offset-2 ring-offset-card scale-105'
+              ? 'ring-2 ring-primary ring-offset-2 ring-offset-secondary scale-105'
               : 'hover:ring-1 hover:ring-muted-foreground/30'
           )}
           style={{ backgroundColor: color.hex }}
