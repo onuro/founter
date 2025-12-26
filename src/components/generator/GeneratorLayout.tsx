@@ -76,7 +76,7 @@ export function GeneratorLayout() {
 
           {/* Preview Section */}
           <div className="space-y-4">
-            <div className="w-full aspect-[1440/900] bg-card rounded-md overflow-hidden">
+            <div className="w-full aspect-[1440/900] bg-surface rounded-md overflow-hidden">
               <div
                 className="w-full h-full transition-colors duration-300"
                 style={{ backgroundColor }}

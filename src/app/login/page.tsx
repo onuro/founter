@@ -52,7 +52,7 @@ function LoginForm() {
     <div className="w-full max-w-sm space-y-8">
       {/* Logo */}
       <div className="text-center">
-        <div className="mx-auto mb-6 w-14 h-14 rounded-md bg-card flex items-center justify-center">
+        <div className="mx-auto mb-6 w-14 h-14 rounded-md bg-surface flex items-center justify-center">
           <Lock className="w-6 h-6 text-primary" />
         </div>
         <h1 className="text-3xl font-bold uppercase tracking-tight">

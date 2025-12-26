@@ -48,7 +48,7 @@ export function Header() {
 
   return (
     <div className="pt-5 px-3 max-w-[1750px] mx-auto">
-      <header className="w-full bg-card backdrop-blur-sm sticky top-0 z-50 px-6 h-16 flex items-center justify-between rounded-md">
+      <header className="w-full bg-surface backdrop-blur-sm sticky top-0 z-50 px-6 h-16 flex items-center justify-between rounded-md">
         <div className="flex items-center gap-3">
           <span className="text-lg font-bold tracking-tight">FOUNTER</span>
           <span className="text-muted-foreground">/</span>
