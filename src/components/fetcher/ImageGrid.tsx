@@ -3,49 +3,43 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import { ExtractedImage } from '@/types/crawl';
+import { GridOptions } from '@/types/preset';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbox, useLightbox } from '@/components/ui/lightbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Copy, Check, ExternalLink, ImageIcon, LayoutGrid, Link2 } from 'lucide-react';
-
-const COLUMN_OPTIONS = [2, 3, 4, 5, 6, 8] as const;
-
-const GAP_OPTIONS = [
-  { label: '2', value: '0.5rem' },
-  { label: '3', value: '0.75rem' },
-  { label: '4', value: '1rem' },
-  { label: '5', value: '1.25rem' },
-  { label: '6', value: '1.5rem' },
-] as const;
-
-const ASPECT_RATIO_OPTIONS = [
-  { label: '1:1', value: '1/1', description: 'Square' },
-  { label: '16:9', value: '16/9', description: 'Landscape HD' },
-  { label: '9:16', value: '9/16', description: 'Portrait HD' },
-  { label: '4:3', value: '4/3', description: 'Classic' },
-  { label: '3:4', value: '3/4', description: 'Portrait' },
-  { label: '3:2', value: '3/2', description: 'Photo' },
-  { label: '2:3', value: '2/3', description: 'Portrait Photo' },
-  { label: '21:9', value: '21/9', description: 'Ultra Wide' },
-  { label: '4:5', value: '4/5', description: 'Instagram' },
-  { label: '5:4', value: '5/4', description: 'Large Format' },
-  { label: '2:1', value: '2/1', description: 'Panorama' },
-] as const;
-
-type AspectRatioValue = typeof ASPECT_RATIO_OPTIONS[number]['value'];
+import {
+  COLUMN_OPTIONS,
+  GAP_OPTIONS,
+  ASPECT_RATIO_OPTIONS,
+  DEFAULT_COLUMNS,
+  DEFAULT_GAP,
+  DEFAULT_ASPECT_RATIO,
+  type AspectRatioValue,
+} from '@/lib/grid-options';
 
 interface ImageGridProps {
   images: ExtractedImage[];
   crawledUrl: string | null;
+  gridOptions?: GridOptions;
 }
 
-export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
+export function ImageGrid({ images, crawledUrl, gridOptions }: ImageGridProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
-  const [columns, setColumns] = useState<number>(5);
-  const [gap, setGap] = useState<string>('1rem');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatioValue>('1/1');
+  const [columns, setColumns] = useState<number>(DEFAULT_COLUMNS);
+  const [gap, setGap] = useState<string>(DEFAULT_GAP);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatioValue>(DEFAULT_ASPECT_RATIO);
+
+  // Apply grid options from preset when they change
+  useEffect(() => {
+    if (gridOptions) {
+      setColumns(gridOptions.columns);
+      setGap(gridOptions.gap);
+      setAspectRatio(gridOptions.aspectRatio as AspectRatioValue);
+    }
+  }, [gridOptions]);
 
   const {
     selectedImage,
@@ -178,10 +172,9 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
               const isFailed = failedImages.has(image.src);
 
               return (
-                <div className="bg-secondary p-1 rounded-lg">
+                <div key={`${image.src}-${index}`} className="bg-secondary p-1 rounded-lg">
                   <div
-                    key={`${image.src}-${index}`}
-                    className="group relative bg-surface rounded-md overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-colors"
+                    className="group fetchimg-grid-item"
                     style={{ aspectRatio }}
                   >
                     {/* Thumbnail */}
@@ -203,7 +196,7 @@ export function ImageGrid({ images, crawledUrl }: ImageGridProps) {
                           alt={image.alt || `Image ${index + 1}`}
                           fill
                           loader={({ src }) => `/_next/image?url=${encodeURIComponent(src)}&w=640&q=75`}
-                          sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
+                          // sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                           className="object-cover object-top transition-transform group-hover:scale-105 ease-out-expo duration-500"
                           onError={() => handleImageError(image.src)}
                         />

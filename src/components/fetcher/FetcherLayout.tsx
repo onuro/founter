@@ -15,7 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, History, Settings, ImageIcon, FileText } from 'lucide-react';
 import { ScrollOptions, DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
 import { toast } from 'sonner';
-import type { SitePreset } from '@/types/preset';
+import type { SitePreset, GridOptions } from '@/types/preset';
 import { Card } from '../ui/card';
 
 // Format seconds to "Xm Ys" or "Xs"
@@ -38,6 +38,7 @@ export function FetcherLayout() {
     createPreset,
     updatePreset,
     deletePreset,
+    reorderPresets,
   } = usePresets('IMAGE');
 
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -46,6 +47,7 @@ export function FetcherLayout() {
   const [scrollOptions, setScrollOptions] = useState<ScrollOptions>(DEFAULT_SCROLL_OPTIONS);
   const [activeCookies, setActiveCookies] = useState<string | undefined>(undefined);
   const [activeLoadMoreSelector, setActiveLoadMoreSelector] = useState<string | undefined>(undefined);
+  const [activeGridOptions, setActiveGridOptions] = useState<GridOptions | undefined>(undefined);
   const [inputUrl, setInputUrl] = useState('');
   const lastCrawledUrl = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState('images');
@@ -92,14 +94,17 @@ export function FetcherLayout() {
     setScrollOptions(preset.crawlOptions.scroll);
     setActiveCookies(preset.crawlOptions.cookies);
     setActiveLoadMoreSelector(preset.crawlOptions.loadMoreSelector);
+    setActiveGridOptions(preset.crawlOptions.gridOptions);
     const hasCookies = !!preset.crawlOptions.cookies;
-    toast.info(`Loaded preset: ${preset.label}${hasCookies ? ' (with auth)' : ''}`);
+    const hasGridOptions = !!preset.crawlOptions.gridOptions;
+    toast.info(`Loaded preset: ${preset.label}${hasCookies ? ' (with auth)' : ''}${hasGridOptions ? ' (with grid settings)' : ''}`);
   }, []);
 
   const handleClearResults = useCallback(() => {
     setInputUrl('');
     setActiveCookies(undefined);
     setActiveLoadMoreSelector(undefined);
+    setActiveGridOptions(undefined);
     clearResults();
   }, [clearResults]);
 
@@ -203,7 +208,7 @@ export function FetcherLayout() {
 
             {/* Results */}
             {!isLoading && images.length > 0 && (
-              <ImageGrid images={images} crawledUrl={crawledUrl} />
+              <ImageGrid images={images} crawledUrl={crawledUrl} gridOptions={activeGridOptions} />
             )}
 
             {/* Empty State */}
@@ -253,6 +258,7 @@ export function FetcherLayout() {
         onPresetCreate={createPreset}
         onPresetUpdate={updatePreset}
         onPresetDelete={deletePreset}
+        onPresetReorder={reorderPresets}
       />
     </div>
   );

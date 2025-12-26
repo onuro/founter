@@ -39,7 +39,8 @@ export function usePresets(type: PresetType) {
       });
       const data = await res.json();
       if (data.success) {
-        setPresets((prev) => [data.data, ...prev]);
+        // New presets go to the end (sorted by order asc)
+        setPresets((prev) => [...prev, data.data]);
         return data.data;
       }
       throw new Error(data.error || 'Failed to create preset');
@@ -76,13 +77,44 @@ export function usePresets(type: PresetType) {
     }
   }, []);
 
+  const reorderPresets = useCallback(
+    async (orderedIds: string[]): Promise<void> => {
+      // Optimistically update local state
+      const reorderedPresets = orderedIds
+        .map((id) => presets.find((p) => p.id === id))
+        .filter((p): p is SitePreset => p !== undefined);
+      setPresets(reorderedPresets);
+
+      try {
+        const res = await fetch('/api/presets/reorder', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderedIds }),
+        });
+        const data = await res.json();
+        if (!data.success) {
+          // Revert on failure
+          await fetchPresets();
+          throw new Error(data.error || 'Failed to reorder presets');
+        }
+      } catch (err) {
+        // Revert on error
+        await fetchPresets();
+        throw err;
+      }
+    },
+    [presets, fetchPresets]
+  );
+
   return {
     presets,
+    setPresets,
     isLoading,
     error,
     createPreset,
     updatePreset,
     deletePreset,
+    reorderPresets,
     refetch: fetchPresets,
   };
 }

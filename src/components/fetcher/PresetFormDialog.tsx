@@ -15,8 +15,16 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { SitePreset, CrawlOptions } from '@/types/preset';
 import { DEFAULT_SCROLL_OPTIONS } from '@/types/crawl';
-import { Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, LayoutGrid } from 'lucide-react';
 import { isValidCookieFormat, parseCookieString, getCookieSummary } from '@/lib/cookies';
+import {
+  COLUMN_OPTIONS,
+  GAP_OPTIONS,
+  ASPECT_RATIO_OPTIONS,
+  DEFAULT_COLUMNS,
+  DEFAULT_GAP,
+  DEFAULT_ASPECT_RATIO,
+} from '@/lib/grid-options';
 
 const DEFAULT_CRAWL_OPTIONS: CrawlOptions = {
   scroll: DEFAULT_SCROLL_OPTIONS,
@@ -41,6 +49,7 @@ export function PresetFormDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCookies, setShowCookies] = useState(false);
+  const [showGridOptions, setShowGridOptions] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -49,11 +58,13 @@ export function PresetFormDialog({
         setUrl(preset.url);
         setCrawlOptions(preset.crawlOptions);
         setShowCookies(!!preset.crawlOptions.cookies);
+        setShowGridOptions(!!preset.crawlOptions.gridOptions);
       } else {
         setLabel('');
         setUrl('');
         setCrawlOptions(DEFAULT_CRAWL_OPTIONS);
         setShowCookies(false);
+        setShowGridOptions(false);
       }
       setError(null);
     }
@@ -119,7 +130,7 @@ export function PresetFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col overflow-clip overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[85vh] pb-0 flex flex-col overflow-clip overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEditing ? 'Edit Preset' : 'Add New Preset'}</DialogTitle>
           <DialogDescription>
@@ -264,10 +275,143 @@ export function PresetFormDialog({
               )}
             </div>
 
+            <div className="space-y-4 pt-2 border-t">
+              <button
+                type="button"
+                onClick={() => setShowGridOptions(!showGridOptions)}
+                className="flex items-center justify-between w-full text-left"
+                disabled={isSubmitting}
+              >
+                <div className="space-y-0.5">
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    <LayoutGrid className="w-4 h-4" />
+                    Grid Display
+                  </span>
+                  <p className="text-xs text-muted-foreground">
+                    {crawlOptions.gridOptions
+                      ? `${crawlOptions.gridOptions.columns} cols, ${crawlOptions.gridOptions.aspectRatio.replace('/', ':')} ratio`
+                      : 'Save preferred grid layout for this preset'}
+                  </p>
+                </div>
+                {showGridOptions ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
+              </button>
+
+              {showGridOptions && (
+                <div className="bg-secondary p-4 rounded-md">
+                  <div className="space-y-2">
+                    <Label className="text-xs">Columns</Label>
+                    <div className="flex flex-wrap gap-1">
+                      {COLUMN_OPTIONS.map((col) => (
+                        <Button
+                          key={col}
+                          type="button"
+                          variant={crawlOptions.gridOptions?.columns === col ? 'default' : 'outline'}
+                          size="sm"
+                          className="w-9 h-8 cursor-pointer"
+                          onClick={() =>
+                            setCrawlOptions({
+                              ...crawlOptions,
+                              gridOptions: {
+                                columns: col,
+                                gap: crawlOptions.gridOptions?.gap || DEFAULT_GAP,
+                                aspectRatio: crawlOptions.gridOptions?.aspectRatio || DEFAULT_ASPECT_RATIO,
+                              },
+                            })
+                          }
+                          disabled={isSubmitting}
+                        >
+                          {col}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Gap</Label>
+                    <div className="flex flex-wrap gap-1">
+                      {GAP_OPTIONS.map((option) => (
+                        <Button
+                          key={option.value}
+                          type="button"
+                          variant={crawlOptions.gridOptions?.gap === option.value ? 'default' : 'outline'}
+                          size="sm"
+                          className="w-9 h-8 cursor-pointer"
+                          onClick={() =>
+                            setCrawlOptions({
+                              ...crawlOptions,
+                              gridOptions: {
+                                columns: crawlOptions.gridOptions?.columns || DEFAULT_COLUMNS,
+                                gap: option.value,
+                                aspectRatio: crawlOptions.gridOptions?.aspectRatio || DEFAULT_ASPECT_RATIO,
+                              },
+                            })
+                          }
+                          disabled={isSubmitting}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Aspect Ratio</Label>
+                    <div className="grid grid-cols-4 gap-1">
+                      {ASPECT_RATIO_OPTIONS.map((option) => (
+                        <Button
+                          key={option.value}
+                          type="button"
+                          variant={crawlOptions.gridOptions?.aspectRatio === option.value ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-8 text-xs cursor-pointer"
+                          onClick={() =>
+                            setCrawlOptions({
+                              ...crawlOptions,
+                              gridOptions: {
+                                columns: crawlOptions.gridOptions?.columns || DEFAULT_COLUMNS,
+                                gap: crawlOptions.gridOptions?.gap || DEFAULT_GAP,
+                                aspectRatio: option.value,
+                              },
+                            })
+                          }
+                          disabled={isSubmitting}
+                          title={option.description}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {crawlOptions.gridOptions && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-muted-foreground cursor-pointer"
+                      onClick={() =>
+                        setCrawlOptions({
+                          ...crawlOptions,
+                          gridOptions: undefined,
+                        })
+                      }
+                      disabled={isSubmitting}
+                    >
+                      Clear grid settings
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+
             {error && <p className="text-sm text-destructive">{error}</p>}
           </div>
 
-          <DialogFooter className="pt-4 border-t mt-4">
+          <DialogFooter className="sticky bottom-0 py-4 border-t mt-4 bg-surface">
             <Button
               type="button"
               variant="outline"

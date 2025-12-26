@@ -14,6 +14,20 @@ import { Plus, Bookmark, Loader2 } from 'lucide-react';
 import { SitePreset, CrawlOptions } from '@/types/preset';
 import { PresetListItem } from './PresetListItem';
 import { PresetFormDialog } from './PresetFormDialog';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
 
 interface PresetsSheetProps {
   open: boolean;
@@ -24,6 +38,7 @@ interface PresetsSheetProps {
   onPresetCreate: (data: { label: string; url: string; crawlOptions: CrawlOptions }) => Promise<SitePreset>;
   onPresetUpdate: (preset: SitePreset) => Promise<SitePreset>;
   onPresetDelete: (id: string) => Promise<void>;
+  onPresetReorder?: (orderedIds: string[]) => Promise<void>;
 }
 
 export function PresetsSheet({
@@ -35,9 +50,35 @@ export function PresetsSheet({
   onPresetCreate,
   onPresetUpdate,
   onPresetDelete,
+  onPresetReorder,
 }: PresetsSheetProps) {
   const [formOpen, setFormOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<SitePreset | null>(null);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id && onPresetReorder) {
+      const oldIndex = presets.findIndex((p) => p.id === active.id);
+      const newIndex = presets.findIndex((p) => p.id === over.id);
+
+      // Calculate new order
+      const newPresets = [...presets];
+      const [movedItem] = newPresets.splice(oldIndex, 1);
+      newPresets.splice(newIndex, 0, movedItem);
+
+      // Call reorder with new order
+      await onPresetReorder(newPresets.map((p) => p.id));
+    }
+  };
 
   const handleSelect = (preset: SitePreset) => {
     onPresetSelect(preset);
@@ -67,7 +108,7 @@ export function PresetsSheet({
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="flex flex-col">
+        <SheetContent side="right" className="flex flex-col sm:max-w-[550px]">
           <SheetHeader>
             <SheetTitle className="flex items-center justify-between pr-6">
               <span>Site Presets</span>
@@ -93,17 +134,28 @@ export function PresetsSheet({
                 <p className="text-sm">No presets saved yet</p>
               </div>
             ) : (
-              <ul className="space-y-1">
-                {presets.map((preset) => (
-                  <PresetListItem
-                    key={preset.id}
-                    preset={preset}
-                    onSelect={() => handleSelect(preset)}
-                    onEdit={() => handleEdit(preset)}
-                    onDelete={() => onPresetDelete(preset.id)}
-                  />
-                ))}
-              </ul>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={presets.map((p) => p.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <ul className="space-y-1">
+                    {presets.map((preset) => (
+                      <PresetListItem
+                        key={preset.id}
+                        preset={preset}
+                        onSelect={() => handleSelect(preset)}
+                        onEdit={() => handleEdit(preset)}
+                        onDelete={() => onPresetDelete(preset.id)}
+                      />
+                    ))}
+                  </ul>
+                </SortableContext>
+              </DndContext>
             )}
           </div>
 

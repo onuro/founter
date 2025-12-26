@@ -29,7 +29,7 @@ export async function GET(request: Request) {
 
     const presets = await prisma.sitePreset.findMany({
       where: type ? { type } : undefined,
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { order: 'asc' },
     });
 
     return NextResponse.json({
@@ -76,12 +76,21 @@ export async function POST(request: Request) {
       );
     }
 
+    // Get the highest order value to place new preset at the end
+    const maxOrderPreset = await prisma.sitePreset.findFirst({
+      where: { type },
+      orderBy: { order: 'desc' },
+      select: { order: true },
+    });
+    const newOrder = (maxOrderPreset?.order ?? -1) + 1;
+
     const preset = await prisma.sitePreset.create({
       data: {
         label: label.trim(),
         url: url.trim(),
         type,
         crawlOptions,
+        order: newOrder,
       },
     });
 

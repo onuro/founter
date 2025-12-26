@@ -52,7 +52,7 @@ export function SettingsForm() {
             BaseRow
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label
               htmlFor="baserowToken"
@@ -81,6 +81,22 @@ export function SettingsForm() {
                 )}
               </button>
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label
+              htmlFor="baserowTokenDescription"
+              className="text-xs text-muted-foreground"
+            >
+              Description (optional)
+            </Label>
+            <Input
+              id="baserowTokenDescription"
+              type="text"
+              value={settings.baserowTokenDescription}
+              onChange={(e) => handleInputChange('baserowTokenDescription', e.target.value)}
+              placeholder="Add a note..."
+              className="text-sm"
+            />
           </div>
         </CardContent>
       </Card>
@@ -119,6 +135,14 @@ export function SettingsForm() {
                 {showKeys.openaiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <Input
+              id="openaiKeyDescription"
+              type="text"
+              value={settings.openaiKeyDescription}
+              onChange={(e) => handleInputChange('openaiKeyDescription', e.target.value)}
+              placeholder="Add a note..."
+              className="text-sm"
+            />
           </div>
 
           {/* Anthropic */}
@@ -146,6 +170,14 @@ export function SettingsForm() {
                 {showKeys.anthropicKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <Input
+              id="anthropicKeyDescription"
+              type="text"
+              value={settings.anthropicKeyDescription}
+              onChange={(e) => handleInputChange('anthropicKeyDescription', e.target.value)}
+              placeholder="Add a note..."
+              className="text-sm"
+            />
           </div>
 
           {/* GLM */}
@@ -173,6 +205,14 @@ export function SettingsForm() {
                 {showKeys.glmKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
+            <Input
+              id="glmKeyDescription"
+              type="text"
+              value={settings.glmKeyDescription}
+              onChange={(e) => handleInputChange('glmKeyDescription', e.target.value)}
+              placeholder="Add a note..."
+              className="text-sm"
+            />
           </div>
         </CardContent>
       </Card>

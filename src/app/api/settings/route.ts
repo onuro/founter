@@ -24,9 +24,13 @@ export async function GET() {
       success: true,
       data: {
         baserowToken: settings.baserowToken ? maskKey(settings.baserowToken) : '',
+        baserowTokenDescription: settings.baserowTokenDescription || '',
         openaiKey: settings.openaiKey ? maskKey(settings.openaiKey) : '',
+        openaiKeyDescription: settings.openaiKeyDescription || '',
         anthropicKey: settings.anthropicKey ? maskKey(settings.anthropicKey) : '',
+        anthropicKeyDescription: settings.anthropicKeyDescription || '',
         glmKey: settings.glmKey ? maskKey(settings.glmKey) : '',
+        glmKeyDescription: settings.glmKeyDescription || '',
       },
     });
   } catch (error) {
@@ -41,11 +45,21 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const body = await request.json();
-    const { baserowToken, openaiKey, anthropicKey, glmKey } = body;
+    const {
+      baserowToken,
+      baserowTokenDescription,
+      openaiKey,
+      openaiKeyDescription,
+      anthropicKey,
+      anthropicKeyDescription,
+      glmKey,
+      glmKeyDescription,
+    } = body;
 
     // Build update data - only update fields that are provided and not masked
     const updateData: Record<string, string | null> = {};
 
+    // API keys - only update if not masked
     if (baserowToken !== undefined && !baserowToken.startsWith('••••')) {
       updateData.baserowToken = baserowToken || null;
     }
@@ -59,6 +73,20 @@ export async function PUT(request: Request) {
       updateData.glmKey = glmKey || null;
     }
 
+    // Descriptions - always update if provided
+    if (baserowTokenDescription !== undefined) {
+      updateData.baserowTokenDescription = baserowTokenDescription || null;
+    }
+    if (openaiKeyDescription !== undefined) {
+      updateData.openaiKeyDescription = openaiKeyDescription || null;
+    }
+    if (anthropicKeyDescription !== undefined) {
+      updateData.anthropicKeyDescription = anthropicKeyDescription || null;
+    }
+    if (glmKeyDescription !== undefined) {
+      updateData.glmKeyDescription = glmKeyDescription || null;
+    }
+
     const settings = await prisma.settings.upsert({
       where: { id: 'default' },
       update: updateData,
@@ -68,14 +96,18 @@ export async function PUT(request: Request) {
       },
     });
 
-    // Return masked values
+    // Return masked values and descriptions
     return NextResponse.json({
       success: true,
       data: {
         baserowToken: settings.baserowToken ? maskKey(settings.baserowToken) : '',
+        baserowTokenDescription: settings.baserowTokenDescription || '',
         openaiKey: settings.openaiKey ? maskKey(settings.openaiKey) : '',
+        openaiKeyDescription: settings.openaiKeyDescription || '',
         anthropicKey: settings.anthropicKey ? maskKey(settings.anthropicKey) : '',
+        anthropicKeyDescription: settings.anthropicKeyDescription || '',
         glmKey: settings.glmKey ? maskKey(settings.glmKey) : '',
+        glmKeyDescription: settings.glmKeyDescription || '',
       },
     });
   } catch (error) {

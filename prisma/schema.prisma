@@ -12,13 +12,17 @@ datasource db {
 }
 
 model Settings {
-  id            String   @id @default("default")
-  baserowToken  String?
-  openaiKey     String?
-  anthropicKey  String?
-  glmKey        String?
-  updatedAt     DateTime @updatedAt
-  createdAt     DateTime @default(now())
+  id                      String   @id @default("default")
+  baserowToken            String?
+  baserowTokenDescription String?
+  openaiKey               String?
+  openaiKeyDescription    String?
+  anthropicKey            String?
+  anthropicKeyDescription String?
+  glmKey                  String?
+  glmKeyDescription       String?
+  updatedAt               DateTime @updatedAt
+  createdAt               DateTime @default(now())
 }
 
 model SitePreset {
@@ -26,7 +30,8 @@ model SitePreset {
   label        String
   url          String
   type         String   // "IMAGE" | "CONTENT"
-  crawlOptions Json     // { scroll: { enabled, scrollCount, scrollDelay }, ...future options }
+  crawlOptions Json     // { scroll: { enabled, scrollCount, scrollDelay }, gridOptions, ...future options }
+  order        Int      @default(0) // Display order (lower = higher in list)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

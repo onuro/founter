@@ -6,9 +6,13 @@ import { SettingsFormData } from '@/types/settings';
 export function useSettings() {
   const [settings, setSettings] = useState<SettingsFormData>({
     baserowToken: '',
+    baserowTokenDescription: '',
     openaiKey: '',
+    openaiKeyDescription: '',
     anthropicKey: '',
+    anthropicKeyDescription: '',
     glmKey: '',
+    glmKeyDescription: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

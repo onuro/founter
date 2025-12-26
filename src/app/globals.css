@@ -94,7 +94,8 @@
   /* off-white text */
 
   /* Surface/elevated surfaces */
-  --surface: lab(9% 0 0);
+  /* --surface: lab(9% 0 0); */
+  --surface: var(--color-neutral-900);
   --surface-foreground: oklch(0.98 0 0);
   --popover: oklch(0.11 0 0);
   --popover-foreground: oklch(0.98 0 0);
@@ -165,5 +166,11 @@
   label[for],
   select {
     cursor: pointer;
+  }
+}
+
+@layer components {
+  .fetchimg-grid-item {
+    @apply relative bg-surface rounded-md overflow-hidden border border-neutral-800 hover:border-neutral-700 transition-colors;
   }
 }

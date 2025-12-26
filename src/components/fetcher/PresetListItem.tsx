@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { SitePreset } from '@/types/preset';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, ScrollText } from 'lucide-react';
+import { Pencil, Trash2, ScrollText, GripVertical } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface PresetListItemProps {
   preset: SitePreset;
@@ -18,6 +20,14 @@ export function PresetListItem({
   onEdit,
   onDelete,
 }: PresetListItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: preset.id });
   const [faviconError, setFaviconError] = useState(false);
 
   const getDomain = (url: string) => {
@@ -56,11 +66,32 @@ export function PresetListItem({
 
   const faviconUrl = getFaviconUrl(preset.url);
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <li className="group flex items-start gap-2 rounded-md hover:bg-background transition-colors">
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`group flex items-start gap-2 rounded-md hover:bg-background transition-colors ${
+        isDragging ? 'opacity-50 bg-muted' : ''
+      }`}
+      {...attributes}
+    >
+      {/* Drag Handle */}
+      <button
+        {...listeners}
+        className="flex-shrink-0 p-3 pr-0 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors"
+        title="Drag to reorder"
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+
       <button
         onClick={onSelect}
-        className="flex-1 flex items-start gap-3 p-3 text-left cursor-pointer min-w-0"
+        className="flex-1 flex items-start gap-3 p-3 pl-1 text-left cursor-pointer min-w-0"
       >
         <div className="flex-shrink-0 w-8 h-8 rounded-md bg-muted flex items-center justify-center overflow-hidden">
           {faviconUrl && !faviconError ? (
