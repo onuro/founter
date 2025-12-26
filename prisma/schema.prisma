@@ -35,3 +35,46 @@ model SitePreset {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+// ==========================================
+// Custom Tables Feature (Baserow-like)
+// ==========================================
+
+model CustomTable {
+  id        String   @id @default(cuid())
+  name      String
+  icon      String?  // emoji or lucide icon name
+  order     Int      @default(0)
+  fields    Field[]
+  rows      Row[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Field {
+  id        String      @id @default(cuid())
+  tableId   String
+  table     CustomTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  name      String
+  type      String      // text | number | url | select | date | boolean | longText | image
+  options   Json?       // type-specific options (e.g., choices for select, precision for number)
+  order     Int         @default(0)
+  width     Int         @default(200) // Column width in pixels
+  required  Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([tableId])
+}
+
+model Row {
+  id        String      @id @default(cuid())
+  tableId   String
+  table     CustomTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  values    Json        // { [fieldId]: value }
+  order     Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([tableId])
+}
