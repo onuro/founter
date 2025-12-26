@@ -79,16 +79,18 @@ export function URLInput({ value, onChange, onSubmit, onClear, onOpenPresets, is
                 </button>
               )}
             </div>
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              onClick={onOpenPresets}
-              title="Site presets"
-              className="cursor-pointer"
-            >
-              <Bookmark className="w-4 h-4" />
-            </Button>
+            <div className="bg-secondary rounded-md p-1 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                onClick={onOpenPresets}
+                title="Site presets"
+                className="cursor-pointer size-8.5 rounded-sm"
+              >
+                <Bookmark className="w-4 h-4" />
+              </Button>
+            </div>
             <Button type="submit" disabled={isLoading || !value.trim()} className="cursor-pointer">
               {isLoading ? (
                 <>

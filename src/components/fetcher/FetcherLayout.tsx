@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
 import { Header } from '@/components/shared/Header';
 import { URLInput } from './URLInput';
 import { ImageGrid } from './ImageGrid';
@@ -39,11 +39,17 @@ export function FetcherLayout() {
     updatePreset,
     deletePreset,
     reorderPresets,
-  } = usePresets('IMAGE');
+    refetch: refetchPresets,
+  } = usePresets('IMAGE', { immediate: false }); // Defer fetch until sheet opens
 
   const [historyOpen, setHistoryOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
+
+  // Lazy mount tracking - sheets only mount after first open
+  const [hasOpenedHistory, setHasOpenedHistory] = useState(false);
+  const [hasOpenedOptions, setHasOpenedOptions] = useState(false);
+  const [hasOpenedPresets, setHasOpenedPresets] = useState(false);
   const [scrollOptions, setScrollOptions] = useState<ScrollOptions>(DEFAULT_SCROLL_OPTIONS);
   const [activeCookies, setActiveCookies] = useState<string | undefined>(undefined);
   const [activeLoadMoreSelector, setActiveLoadMoreSelector] = useState<string | undefined>(undefined);
@@ -108,10 +114,20 @@ export function FetcherLayout() {
     clearResults();
   }, [clearResults]);
 
-  // Memoize sheet toggle callbacks to prevent re-renders
-  const openHistory = useCallback(() => setHistoryOpen(true), []);
-  const openOptions = useCallback(() => setOptionsOpen(true), []);
-  const openPresets = useCallback(() => setPresetsOpen(true), []);
+  // Memoize sheet toggle callbacks with startTransition for better INP
+  const openHistory = useCallback(() => {
+    setHasOpenedHistory(true);
+    startTransition(() => setHistoryOpen(true));
+  }, []);
+  const openOptions = useCallback(() => {
+    setHasOpenedOptions(true);
+    startTransition(() => setOptionsOpen(true));
+  }, []);
+  const openPresets = useCallback(() => {
+    setHasOpenedPresets(true);
+    refetchPresets(); // Fetch presets when sheet opens
+    startTransition(() => setPresetsOpen(true));
+  }, [refetchPresets]);
 
   return (
     <div className="min-h-screen p-4 bg-background text-foreground">
@@ -231,35 +247,42 @@ export function FetcherLayout() {
         </Tabs>
       </main>
 
-      <HistorySheet
-        open={historyOpen}
-        onOpenChange={setHistoryOpen}
-        title="Fetch History"
-        description="Your recent crawled URLs"
-        items={items}
-        onItemClick={handleHistoryItemClick}
-        onItemRemove={handleHistoryItemRemove}
-        onClearAll={clearAll}
-      />
+      {/* Lazy mount sheets - only render after first open */}
+      {hasOpenedHistory && (
+        <HistorySheet
+          open={historyOpen}
+          onOpenChange={setHistoryOpen}
+          title="Fetch History"
+          description="Your recent crawled URLs"
+          items={items}
+          onItemClick={handleHistoryItemClick}
+          onItemRemove={handleHistoryItemRemove}
+          onClearAll={clearAll}
+        />
+      )}
 
-      <CrawlOptionsSheet
-        open={optionsOpen}
-        onOpenChange={setOptionsOpen}
-        options={scrollOptions}
-        onOptionsChange={setScrollOptions}
-      />
+      {hasOpenedOptions && (
+        <CrawlOptionsSheet
+          open={optionsOpen}
+          onOpenChange={setOptionsOpen}
+          options={scrollOptions}
+          onOptionsChange={setScrollOptions}
+        />
+      )}
 
-      <PresetsSheet
-        open={presetsOpen}
-        onOpenChange={setPresetsOpen}
-        presets={presets}
-        isLoading={presetsLoading}
-        onPresetSelect={handlePresetSelect}
-        onPresetCreate={createPreset}
-        onPresetUpdate={updatePreset}
-        onPresetDelete={deletePreset}
-        onPresetReorder={reorderPresets}
-      />
+      {hasOpenedPresets && (
+        <PresetsSheet
+          open={presetsOpen}
+          onOpenChange={setPresetsOpen}
+          presets={presets}
+          isLoading={presetsLoading}
+          onPresetSelect={handlePresetSelect}
+          onPresetCreate={createPreset}
+          onPresetUpdate={updatePreset}
+          onPresetDelete={deletePreset}
+          onPresetReorder={reorderPresets}
+        />
+      )}
     </div>
   );
 }

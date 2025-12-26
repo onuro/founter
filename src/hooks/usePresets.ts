@@ -3,12 +3,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { SitePreset, CreatePresetInput, UpdatePresetInput, PresetType } from '@/types/preset';
 
-export function usePresets(type: PresetType) {
+interface UsePresetsOptions {
+  /** If false, won't fetch on mount - call refetch() manually. Default: true */
+  immediate?: boolean;
+}
+
+export function usePresets(type: PresetType, options: UsePresetsOptions = {}) {
+  const { immediate = true } = options;
   const [presets, setPresets] = useState<SitePreset[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(immediate); // Only show loading if fetching immediately
   const [error, setError] = useState<string | null>(null);
+  const [hasFetched, setHasFetched] = useState(false);
 
   const fetchPresets = useCallback(async () => {
+    if (hasFetched && presets.length > 0) return; // Already have data
     setIsLoading(true);
     setError(null);
     try {
@@ -16,6 +24,7 @@ export function usePresets(type: PresetType) {
       const data = await res.json();
       if (data.success) {
         setPresets(data.data);
+        setHasFetched(true);
       } else {
         setError(data.error || 'Failed to fetch presets');
       }
@@ -24,11 +33,13 @@ export function usePresets(type: PresetType) {
     } finally {
       setIsLoading(false);
     }
-  }, [type]);
+  }, [type, hasFetched, presets.length]);
 
   useEffect(() => {
-    fetchPresets();
-  }, [fetchPresets]);
+    if (immediate) {
+      fetchPresets();
+    }
+  }, [immediate, fetchPresets]);
 
   const createPreset = useCallback(
     async (input: Omit<CreatePresetInput, 'type'>): Promise<SitePreset> => {
