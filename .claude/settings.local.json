@@ -18,7 +18,8 @@
       "Bash(cd /Users/onuroztaskiran/FE\\\\ Apps/founter && npx prisma migrate dev:*)",
       "Bash(cd /Users/onuroztaskiran/FE\\\\ Apps/founter && npx prisma migrate reset --force:*)",
       "Bash(cd /Users/onuroztaskiran/FE\\\\ Apps/founter && PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"ok go\" npx prisma migrate reset --force:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(unzip:*)"
     ]
   }
 }

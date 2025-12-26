@@ -8,7 +8,7 @@ import { ColorPicker } from './ColorPicker';
 import { ExportControls } from './ExportControls';
 import { useImageUpload } from '@/hooks/useImageUpload';
 import { useImageExport } from '@/hooks/useImageExport';
-import { Header } from '@/components/shared/Header';
+import { ContentHeader } from '@/components/shared/ContentHeader';
 
 export function GeneratorLayout() {
   const exportRef = useRef<HTMLDivElement>(null);
@@ -28,7 +28,7 @@ export function GeneratorLayout() {
     : 'newsletter-image';
 
   return (
-    <div className="min-h-screen p-4 bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Hidden Export Target - fixed 1440x900, wrapped in overflow-hidden container */}
       <div className="fixed top-0 left-0 w-px h-px overflow-hidden" aria-hidden="true">
         <div
@@ -40,13 +40,13 @@ export function GeneratorLayout() {
         </div>
       </div>
 
-      {/* Header */}
-      <Header />
+      {/* Content Header */}
+      <ContentHeader title="Generator" />
 
 
       {/* Main Content */}
-      <main className="max-w-[1750px] mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-[400px_1fr] gap-8 items-start">
+      <main className="mx-auto px-6 pl-2">
+        <div className="grid lg:grid-cols-[400px_1fr] 3xl:grid-cols-[500px_1fr] gap-4 items-start">
 
           {/* Controls Sidebar */}
           <div className="space-y-4">

@@ -53,7 +53,7 @@ export function URLInput({ value, onChange, onSubmit, onClear, onOpenPresets, is
   };
 
   return (
-    <Card>
+    <Card className='rounded-t-none pt-0'>
       <CardContent className="pt-0">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-2">

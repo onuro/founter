@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
-import { Header } from '@/components/shared/Header';
+import { ContentHeader } from '@/components/shared/ContentHeader';
 import { URLInput } from './URLInput';
 import { ImageGrid } from './ImageGrid';
 import { CrawlOptionsSheet } from './CrawlOptionsSheet';
@@ -139,10 +139,10 @@ export function FetcherLayout() {
   }, [refetchPresets]);
 
   return (
-    <div className="min-h-screen p-4 bg-background text-foreground">
-      <Header />
+    <div className="min-h-screen bg-background text-foreground">
+      <ContentHeader title="Fetcher" />
 
-      <main className="max-w-[1750px] mx-auto px-3 py-8">
+      <main className="mx-auto px-6 pl-2">
         <Card className='rounded-b-xs'>
           <div className="p-2 flex items-start justify-between">
             <div>
@@ -174,8 +174,8 @@ export function FetcherLayout() {
           </div>
         </Card>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 mt-1">
-          <Card className='rounded-t-xs'>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-0 gap-0 mt-1">
+          <Card className='rounded-none mb-0'>
             <TabsList>
               <TabsTrigger value="images" className="cursor-pointer">
                 <ImageIcon className="w-4 h-4 mr-2" />

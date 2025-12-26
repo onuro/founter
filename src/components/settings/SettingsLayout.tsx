@@ -1,12 +1,12 @@
 'use client';
 
-import { Header } from '@/components/shared/Header';
+import { ContentHeader } from '@/components/shared/ContentHeader';
 import { SettingsForm } from './SettingsForm';
 
 export function SettingsLayout() {
   return (
-    <div className="min-h-screen p-4 bg-background text-foreground">
-      <Header />
+    <div className="min-h-screen bg-background text-foreground">
+      <ContentHeader title="Settings" />
 
       <main className="max-w-2xl mx-auto px-4 py-8">
         <div className="mb-8">

@@ -91,7 +91,7 @@ export function ColorPicker({ selected, onChange }: ColorPickerProps) {
           </TabsList>
 
           <TabsContent value="presets" className="mt-0">
-            <div className="grid grid-cols-8 gap-3">
+            <div className="grid grid-cols-8 3xl:grid-cols-10 gap-3">
               {PREDEFINED_COLORS.map((color) => (
                 <ColorButton
                   key={color.hex}
