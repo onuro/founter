@@ -105,6 +105,9 @@ async function getAPIKey(provider: AIProvider): Promise<string> {
     case 'glm':
       if (!settings.glmKey) throw new Error('GLM API key not configured');
       return settings.glmKey;
+    case 'deepseek':
+      if (!settings.deepseekKey) throw new Error('DeepSeek API key not configured');
+      return settings.deepseekKey;
     default:
       throw new Error(`Unknown AI provider: ${provider}`);
   }

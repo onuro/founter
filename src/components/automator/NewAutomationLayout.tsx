@@ -220,7 +220,7 @@ export function NewAutomationLayout() {
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <CardTitle>New Resource Enricher</CardTitle>
+              <CardTitle>New Resources BaseRow Updater</CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
                 {AUTOMATION_TYPES.resource_enricher.description}
               </p>
@@ -243,7 +243,7 @@ export function NewAutomationLayout() {
                 id="name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="My Resource Enricher"
+                placeholder="My Resources BaseRow Updater"
               />
             </div>
             <div className="space-y-2">

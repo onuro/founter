@@ -29,8 +29,8 @@ function AutomationCard({
   const typeInfo = AUTOMATION_TYPES[automation.type];
 
   return (
-    <Card className="hover:bg-secondary/50 transition-colors">
-      <CardContent className="p-4">
+    <Card className="hover:bg-surface/50 transition-colors">
+      <CardContent>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -137,7 +137,7 @@ export function AutomatorLayout() {
   };
 
   return (
-    <div className="p-6 pl-2 pr-6 space-y-6">
+    <div className="p-6 pl-2 pr-6 pt-0 space-y-6">
       {/* Header */}
       <Card>
         <CardHeader>

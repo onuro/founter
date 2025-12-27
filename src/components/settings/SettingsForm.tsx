@@ -267,6 +267,41 @@ export function SettingsForm() {
               className="text-sm"
             />
           </div>
+
+          {/* DeepSeek */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="deepseekKey"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
+            >
+              DeepSeek API Key
+            </Label>
+            <div className="relative">
+              <Input
+                id="deepseekKey"
+                type={showKeys.deepseekKey ? 'text' : 'password'}
+                value={settings.deepseekKey}
+                onChange={(e) => handleInputChange('deepseekKey', e.target.value)}
+                placeholder="sk-..."
+                className="pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => toggleShowKey('deepseekKey')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {showKeys.deepseekKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <Input
+              id="deepseekKeyDescription"
+              type="text"
+              value={settings.deepseekKeyDescription}
+              onChange={(e) => handleInputChange('deepseekKeyDescription', e.target.value)}
+              placeholder="Add a note..."
+              className="text-sm"
+            />
+          </div>
         </CardContent>
       </Card>
 

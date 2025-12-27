@@ -224,7 +224,7 @@ export function AutomationDetailLayout({
   }
 
   return (
-    <div className="p-6 pl-4 pr-6 w-full mx-auto space-y-6">
+    <div className="p-6 pl-4 pr-6 pt-0 w-full mx-auto space-y-6">
       {/* Back link */}
       <Button variant="ghost" asChild className="gap-2">
         <Link href="/automator">

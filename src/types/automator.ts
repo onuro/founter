@@ -3,7 +3,7 @@ export type AutomationType = 'resource_enricher';
 
 export type AutomationRunStatus = 'pending' | 'running' | 'completed' | 'failed';
 
-export type AIProvider = 'openai' | 'anthropic' | 'glm';
+export type AIProvider = 'openai' | 'anthropic' | 'glm' | 'deepseek';
 
 // Resource Enricher specific config
 export interface ResourceEnricherConfig {
@@ -113,7 +113,7 @@ export const AUTOMATION_TYPES: Record<AutomationType, {
   icon: string;
 }> = {
   resource_enricher: {
-    label: 'Resource Enricher',
+    label: 'Resources BaseRow Updater',
     description: 'Crawl URL and generate AI summaries for Baserow rows',
     icon: 'Sparkles',
   },
@@ -139,5 +139,10 @@ export const AI_PROVIDERS: Record<AIProvider, {
     label: 'GLM (Zhipu)',
     models: ['glm-4-flash', 'glm-4'],
     defaultModel: 'glm-4-flash',
+  },
+  deepseek: {
+    label: 'DeepSeek',
+    models: ['deepseek-chat', 'deepseek-reasoner'],
+    defaultModel: 'deepseek-chat',
   },
 };

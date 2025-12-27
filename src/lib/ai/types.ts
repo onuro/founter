@@ -1,4 +1,4 @@
-export type AIProvider = 'openai' | 'anthropic' | 'glm';
+export type AIProvider = 'openai' | 'anthropic' | 'glm' | 'deepseek';
 
 export interface SummarizeOptions {
   shortMaxLength: number;

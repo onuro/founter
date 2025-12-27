@@ -10,6 +10,8 @@ export interface Settings {
   anthropicKeyDescription: string | null;
   glmKey: string | null;
   glmKeyDescription: string | null;
+  deepseekKey: string | null;
+  deepseekKeyDescription: string | null;
 }
 
 export interface SettingsFormData {
@@ -24,6 +26,8 @@ export interface SettingsFormData {
   anthropicKeyDescription: string;
   glmKey: string;
   glmKeyDescription: string;
+  deepseekKey: string;
+  deepseekKeyDescription: string;
 }
 
 export interface SettingsResponse {

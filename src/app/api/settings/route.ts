@@ -34,6 +34,8 @@ export async function GET() {
         anthropicKeyDescription: settings.anthropicKeyDescription || '',
         glmKey: settings.glmKey ? maskKey(settings.glmKey) : '',
         glmKeyDescription: settings.glmKeyDescription || '',
+        deepseekKey: settings.deepseekKey ? maskKey(settings.deepseekKey) : '',
+        deepseekKeyDescription: settings.deepseekKeyDescription || '',
       },
     });
   } catch (error) {
@@ -60,6 +62,8 @@ export async function PUT(request: Request) {
       anthropicKeyDescription,
       glmKey,
       glmKeyDescription,
+      deepseekKey,
+      deepseekKeyDescription,
     } = body;
 
     // Build update data - only update fields that are provided and not masked
@@ -80,6 +84,9 @@ export async function PUT(request: Request) {
     }
     if (glmKey !== undefined && !glmKey.startsWith('••••')) {
       updateData.glmKey = glmKey || null;
+    }
+    if (deepseekKey !== undefined && !deepseekKey.startsWith('••••')) {
+      updateData.deepseekKey = deepseekKey || null;
     }
 
     // Non-sensitive fields - always update if provided
@@ -102,6 +109,9 @@ export async function PUT(request: Request) {
     }
     if (glmKeyDescription !== undefined) {
       updateData.glmKeyDescription = glmKeyDescription || null;
+    }
+    if (deepseekKeyDescription !== undefined) {
+      updateData.deepseekKeyDescription = deepseekKeyDescription || null;
     }
 
     const settings = await prisma.settings.upsert({
@@ -128,6 +138,8 @@ export async function PUT(request: Request) {
         anthropicKeyDescription: settings.anthropicKeyDescription || '',
         glmKey: settings.glmKey ? maskKey(settings.glmKey) : '',
         glmKeyDescription: settings.glmKeyDescription || '',
+        deepseekKey: settings.deepseekKey ? maskKey(settings.deepseekKey) : '',
+        deepseekKeyDescription: settings.deepseekKeyDescription || '',
       },
     });
   } catch (error) {

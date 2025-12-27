@@ -16,6 +16,8 @@ export function useSettings() {
     anthropicKeyDescription: '',
     glmKey: '',
     glmKeyDescription: '',
+    deepseekKey: '',
+    deepseekKeyDescription: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

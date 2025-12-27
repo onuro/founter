@@ -192,6 +192,51 @@ async function summarizeWithGLM(
 }
 
 /**
+ * DeepSeek implementation
+ */
+async function summarizeWithDeepSeek(
+  content: string,
+  options: SummarizeOptions,
+  config: AIProviderConfig
+): Promise<SummarizeResult> {
+  const model = config.model || 'deepseek-chat';
+  const prompt = createPrompt(content, options);
+
+  const response = await fetch('https://api.deepseek.com/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${config.apiKey}`,
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a helpful assistant that summarizes web content. Always respond with valid JSON only.',
+        },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.3,
+      max_tokens: 1000,
+    }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error?.message || 'DeepSeek API request failed');
+  }
+
+  const data = await response.json();
+  const aiResponse = data.choices?.[0]?.message?.content;
+  if (!aiResponse) {
+    throw new Error('No response from DeepSeek');
+  }
+
+  return parseAIResponse(aiResponse);
+}
+
+/**
  * Create an AI client for the specified provider
  */
 export function createAIClient(provider: AIProvider, apiKey: string, model?: string): AIClient {
@@ -206,6 +251,8 @@ export function createAIClient(provider: AIProvider, apiKey: string, model?: str
           return summarizeWithAnthropic(content, options, config);
         case 'glm':
           return summarizeWithGLM(content, options, config);
+        case 'deepseek':
+          return summarizeWithDeepSeek(content, options, config);
         default:
           throw new Error(`Unknown AI provider: ${provider}`);
       }
