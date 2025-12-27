@@ -3,8 +3,9 @@
 import { ContentHeader } from '@/components/shared/ContentHeader';
 import { SettingsForm } from './SettingsForm';
 import { DatabaseBackups } from './DatabaseBackups';
+import { OrphanScanner } from './OrphanScanner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Settings, HardDrive } from 'lucide-react';
+import { Settings, HardDrive, Wrench } from 'lucide-react';
 
 export function SettingsLayout() {
   return (
@@ -29,6 +30,10 @@ export function SettingsLayout() {
               <HardDrive className="w-4 h-4 mr-2" />
               DB Backups
             </TabsTrigger>
+            <TabsTrigger value="tools" className="cursor-pointer">
+              <Wrench className="w-4 h-4 mr-2" />
+              Tools
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="general">
@@ -37,6 +42,10 @@ export function SettingsLayout() {
 
           <TabsContent value="backups">
             <DatabaseBackups />
+          </TabsContent>
+
+          <TabsContent value="tools">
+            <OrphanScanner />
           </TabsContent>
         </Tabs>
       </main>

@@ -49,9 +49,9 @@ export async function GET() {
         const filePath = path.join(BACKUPS_DIR, file);
         const stats = await fs.stat(filePath);
 
-        // Extract timestamp from filename (format: backup_YYYY-MM-DD_HH-mm-ss.db)
-        const match = file.match(/backup_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})\.db/);
-        const id = match ? match[1] : file.replace('.db', '');
+        // Extract timestamp from filename (format: backup_YYYY-MM-DD_HH-mm-ss.db or backup_YYYY-MM-DD_HH-mm-ss_pre-restore.db)
+        const match = file.match(/backup_(\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}(?:_pre-restore)?)\.db/);
+        const id = match ? match[1] : file.replace('.db', '').replace(/^backup_/, '');
 
         backups.push({
           id,

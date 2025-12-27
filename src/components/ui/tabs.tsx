@@ -12,7 +12,7 @@ const tabsListVariants = cva(
     variants: {
       size: {
         default: "p-1",
-        sm: "p-0.5",
+        sm: "p-1",
       },
     },
     defaultVariants: {
@@ -34,7 +34,7 @@ const tabsTriggerVariants = cva(
     variants: {
       size: {
         default: "px-3 py-3 text-xs",
-        sm: "px-2 py-1.5 text-[10px]",
+        sm: "px-2 py-1.5 text-[12px]",
       },
     },
     defaultVariants: {

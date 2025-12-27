@@ -271,18 +271,20 @@ export function DatabaseBackups() {
               <AlertTriangle className="w-5 h-5 text-amber-500" />
               Restore Database?
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                You are about to restore the database from backup:{' '}
-                <strong>{restoreConfirm?.filename}</strong>
-              </p>
-              <p>
-                This will replace your current database. A pre-restore backup
-                will be created automatically before restoring.
-              </p>
-              <p className="text-amber-500 font-medium">
-                You may need to refresh the page after restoration.
-              </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-muted-foreground text-sm">
+                <p>
+                  You are about to restore the database from backup:{' '}
+                  <strong>{restoreConfirm?.filename}</strong>
+                </p>
+                <p>
+                  This will replace your current database. A pre-restore backup
+                  will be created automatically before restoring.
+                </p>
+                <p className="text-amber-500 font-medium">
+                  You may need to refresh the page after restoration.
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -308,12 +310,14 @@ export function DatabaseBackups() {
               <Trash2 className="w-5 h-5 text-destructive" />
               Delete Backup?
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              <p>
-                Are you sure you want to delete backup:{' '}
-                <strong>{deleteConfirm?.filename}</strong>?
-              </p>
-              <p className="mt-2">This action cannot be undone.</p>
+            <AlertDialogDescription asChild>
+              <div className="text-muted-foreground text-sm">
+                <p>
+                  Are you sure you want to delete backup:{' '}
+                  <strong>{deleteConfirm?.filename}</strong>?
+                </p>
+                <p className="mt-2">This action cannot be undone.</p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

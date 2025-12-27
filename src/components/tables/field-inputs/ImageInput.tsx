@@ -111,32 +111,34 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
         />
       )}
 
-      {/* Input */}
-      <Tabs defaultValue="upload">
-        <TabsList>
-          <TabsTrigger value="upload">Upload</TabsTrigger>
-          <TabsTrigger value="url">URL</TabsTrigger>
-        </TabsList>
-        <TabsContent value="upload">
-          <FileDropzone
-            onFilesSelected={handleFilesSelected}
-            accept="image/*"
-            isLoading={isUploading}
-            title="Click to upload"
-            description="PNG, JPG, WebP"
-            loadingText="Uploading..."
-          />
-        </TabsContent>
-        <TabsContent value="url">
-          <Input
-            type="text"
-            value={urlValue}
-            onChange={(e) => handleUrlChange(e.target.value)}
-            placeholder="https://example.com/image.jpg"
-            className="bg-secondary"
-          />
-        </TabsContent>
-      </Tabs>
+      {/* Input - only show when no image */}
+      {!value && (
+        <Tabs defaultValue="upload" size="sm">
+          <TabsList>
+            <TabsTrigger value="upload">Upload</TabsTrigger>
+            <TabsTrigger value="url">URL</TabsTrigger>
+          </TabsList>
+          <TabsContent value="upload">
+            <FileDropzone
+              onFilesSelected={handleFilesSelected}
+              accept="image/*"
+              isLoading={isUploading}
+              title="Click to upload"
+              description="PNG, JPG, WebP"
+              loadingText="Uploading..."
+            />
+          </TabsContent>
+          <TabsContent value="url">
+            <Input
+              type="text"
+              value={urlValue}
+              onChange={(e) => handleUrlChange(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="bg-secondary"
+            />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 }
