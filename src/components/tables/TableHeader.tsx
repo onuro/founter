@@ -27,6 +27,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Field } from '@/types/tables';
 import { FieldTypeIcon } from './FieldTypeIcon';
 
@@ -164,6 +174,20 @@ export function TableHeader({
   // Track live width during resize for visual feedback
   const [liveWidth, setLiveWidth] = useState<{ fieldId: string; width: number } | null>(null);
 
+  // Track field pending deletion for confirmation
+  const [fieldToDelete, setFieldToDelete] = useState<Field | null>(null);
+
+  const handleDeleteClick = useCallback((field: Field) => {
+    setFieldToDelete(field);
+  }, []);
+
+  const handleConfirmDelete = useCallback(() => {
+    if (fieldToDelete) {
+      onDeleteField(fieldToDelete.id);
+      setFieldToDelete(null);
+    }
+  }, [fieldToDelete, onDeleteField]);
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -241,7 +265,7 @@ export function TableHeader({
               field={field}
               liveWidth={liveWidth?.fieldId === field.id ? liveWidth.width : null}
               onEditField={onEditField}
-              onDeleteField={onDeleteField}
+              onDeleteField={() => handleDeleteClick(field)}
               onResizeStart={handleResizeStart}
             />
           ))}
@@ -259,6 +283,27 @@ export function TableHeader({
           <Plus className="w-4 h-4" />
         </Button>
       </div>
+
+      {/* Delete field confirmation dialog */}
+      <AlertDialog open={!!fieldToDelete} onOpenChange={(open) => !open && setFieldToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete field "{fieldToDelete?.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this field and all its data from every row in the table. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete Field
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

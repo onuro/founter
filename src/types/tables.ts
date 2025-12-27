@@ -222,3 +222,12 @@ export const TAG_COLORS = [
     border: 'border-cyan-500/30',
   },
 ];
+
+// Row height presets for table view
+export type RowHeight = 'small' | 'medium' | 'large';
+
+export const ROW_HEIGHT_CONFIG = {
+  small: { height: 40, selectMaxHeight: 28 },
+  medium: { height: 64, selectMaxHeight: 52 },
+  large: { height: 98, selectMaxHeight: 86 },
+} as const;

@@ -10,7 +10,7 @@ import { TableView } from './TableView';
 import { RowDetailSheet } from './RowDetailSheet';
 import { CreateTableDialog } from './CreateTableDialog';
 import { AddFieldDialog } from './AddFieldDialog';
-import type { Field, Row, CreateFieldInput } from '@/types/tables';
+import type { Field, Row, CreateFieldInput, RowHeight } from '@/types/tables';
 
 export function TablesLayout() {
   const router = useRouter();
@@ -24,6 +24,12 @@ export function TablesLayout() {
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [isRowSheetOpen, setIsRowSheetOpen] = useState(false);
   const [isNewRow, setIsNewRow] = useState(false);
+  const [rowHeight, setRowHeight] = useState<RowHeight>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('tables-row-height') as RowHeight) || 'small';
+    }
+    return 'small';
+  });
 
   // Hooks
   const {
@@ -189,6 +195,11 @@ export function TablesLayout() {
     [editingField, createField, updateField, refetchTable]
   );
 
+  const handleRowHeightChange = useCallback((height: RowHeight) => {
+    setRowHeight(height);
+    localStorage.setItem('tables-row-height', height);
+  }, []);
+
   const handleAddRow = useCallback(() => {
     setSelectedRowId(null);
     setIsNewRow(true);
@@ -263,6 +274,8 @@ export function TablesLayout() {
           onResizeField={handleResizeField}
           onAddRow={handleAddRow}
           isLoading={isLoadingTable}
+          rowHeight={rowHeight}
+          onRowHeightChange={handleRowHeightChange}
           totalRows={totalRows}
           hasMore={hasMore}
           isLoadingMore={isLoadingMore}

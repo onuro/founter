@@ -95,7 +95,7 @@
 
   /* Surface/elevated surfaces */
   /* --surface: lab(9% 0 0); */
-  --surface: var(--color-neutral-900);
+  --surface: color-mix(in srgb, var(--color-neutral-900), black 15%);
   --surface-foreground: oklch(0.98 0 0);
   --popover: oklch(0.11 0 0);
   --popover-foreground: oklch(0.98 0 0);

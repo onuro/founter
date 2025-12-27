@@ -5,11 +5,12 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Plus, Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import type { CustomTable, Field } from '@/types/tables';
+import type { CustomTable, Field, RowHeight } from '@/types/tables';
+import { ROW_HEIGHT_CONFIG } from '@/types/tables';
 import { TableHeader } from './TableHeader';
 import { TableRow } from './TableRow';
+import { TableToolbar } from './TableToolbar';
 
-const ROW_HEIGHT = 40;
 const OVERSCAN = 10;
 const LOAD_MORE_THRESHOLD = 20;
 
@@ -24,6 +25,9 @@ interface TableViewProps {
   onResizeField: (fieldId: string, width: number) => void;
   onAddRow: () => void;
   isLoading?: boolean;
+  // Row height
+  rowHeight?: RowHeight;
+  onRowHeightChange?: (height: RowHeight) => void;
   // Pagination props
   totalRows?: number;
   hasMore?: boolean;
@@ -43,6 +47,8 @@ export function TableView({
   onResizeField,
   onAddRow,
   isLoading,
+  rowHeight = 'small',
+  onRowHeightChange,
   totalRows = 0,
   hasMore = false,
   isLoadingMore = false,
@@ -51,13 +57,19 @@ export function TableView({
 }: TableViewProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const rows = table?.rows || [];
+  const rowHeightPx = ROW_HEIGHT_CONFIG[rowHeight].height;
 
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollContainerRef.current,
-    estimateSize: () => ROW_HEIGHT,
+    estimateSize: () => rowHeightPx,
     overscan: OVERSCAN,
   });
+
+  // Force virtualizer to remeasure when row height changes
+  useEffect(() => {
+    virtualizer.measure();
+  }, [rowHeightPx, virtualizer]);
 
   const virtualItems = virtualizer.getVirtualItems();
 
@@ -108,6 +120,14 @@ export function TableView({
 
   return (
     <div className={cn('flex flex-col h-full', className)}>
+      {/* Toolbar with row height toggle */}
+      {onRowHeightChange && (
+        <TableToolbar
+          rowHeight={rowHeight}
+          onRowHeightChange={onRowHeightChange}
+        />
+      )}
+
       {/* Table content with scroll container */}
       <div ref={scrollContainerRef} className="flex-1 overflow-auto">
         <div className="min-w-max">
@@ -162,6 +182,7 @@ export function TableView({
                     <TableRow
                       row={row}
                       fields={fields}
+                      rowHeight={rowHeight}
                       isSelected={selectedRowId === row.id}
                       onClick={() => onRowSelect(row.id)}
                     />

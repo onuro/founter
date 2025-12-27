@@ -3,13 +3,14 @@
 import { memo, useState } from 'react';
 import { Check, ExternalLink, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Field, FieldType, SelectFieldOptions, SelectChoice } from '@/types/tables';
-import { TAG_COLORS } from '@/types/tables';
+import type { Field, FieldType, SelectFieldOptions, SelectChoice, RowHeight } from '@/types/tables';
+import { TAG_COLORS, ROW_HEIGHT_CONFIG } from '@/types/tables';
 import { Lightbox } from '@/components/ui/lightbox';
 
 interface TableCellProps {
   field: Field;
   value: unknown;
+  rowHeight?: RowHeight;
   className?: string;
 }
 
@@ -19,15 +20,24 @@ function getTagColor(colorName: string) {
 
 function renderSelectValue(
   value: unknown,
-  options: SelectFieldOptions | null
+  options: SelectFieldOptions | null,
+  rowHeight: RowHeight = 'small'
 ): React.ReactNode {
   if (!value) return null;
 
   const choices = options?.choices || [];
   const valueArray = Array.isArray(value) ? value : [value];
+  const config = ROW_HEIGHT_CONFIG[rowHeight];
 
   return (
-    <div className="flex flex-wrap gap-1">
+    <div
+      className={cn(
+        'flex gap-1 overflow-hidden',
+        rowHeight === 'small' && 'flex-nowrap',
+        rowHeight !== 'small' && 'flex-wrap content-start'
+      )}
+      style={{ maxHeight: config.selectMaxHeight }}
+    >
       {valueArray.map((v, idx) => {
         const choice = choices.find((c: SelectChoice) => c.id === v || c.label === v);
 
@@ -36,7 +46,7 @@ function renderSelectValue(
           return (
             <span
               key={idx}
-              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30"
+              className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30 shrink-0"
               title="Invalid value - edit row to remove"
             >
               {String(v)}
@@ -49,7 +59,7 @@ function renderSelectValue(
           <span
             key={idx}
             className={cn(
-              'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
+              'inline-flex items-center px-2 py-0.5 rounded text-sm font-medium shrink-0',
               color.bg,
               color.text
             )}
@@ -96,7 +106,11 @@ const ImageCell = memo(function ImageCell({ src }: ImageCellProps) {
   );
 });
 
-function renderCellValue(field: Field, value: unknown): React.ReactNode {
+function renderCellValue(
+  field: Field,
+  value: unknown,
+  rowHeight: RowHeight = 'small'
+): React.ReactNode {
   const type = field.type as FieldType;
 
   // Handle null/undefined
@@ -127,7 +141,7 @@ function renderCellValue(field: Field, value: unknown): React.ReactNode {
       );
 
     case 'select':
-      return renderSelectValue(value, field.options as SelectFieldOptions | null);
+      return renderSelectValue(value, field.options as SelectFieldOptions | null, rowHeight);
 
     case 'date':
       try {
@@ -154,9 +168,25 @@ function renderCellValue(field: Field, value: unknown): React.ReactNode {
 
     case 'longText':
       const text = String(value);
+      // Show more lines in medium/large row heights
+      if (rowHeight === 'large') {
+        return (
+          <span className="text-sm line-clamp-4 whitespace-pre-wrap" title={text}>
+            {text}
+          </span>
+        );
+      }
+      if (rowHeight === 'medium') {
+        return (
+          <span className="text-sm line-clamp-2 whitespace-pre-wrap" title={text}>
+            {text}
+          </span>
+        );
+      }
+      // Small: single line truncate
       return (
         <span className="truncate text-sm" title={text}>
-          {text.length > 100 ? `${text.slice(0, 100)}...` : text}
+          {text}
         </span>
       );
 
@@ -170,15 +200,20 @@ function renderCellValue(field: Field, value: unknown): React.ReactNode {
 }
 
 export const TableCell = memo(
-  function TableCell({ field, value, className }: TableCellProps) {
+  function TableCell({ field, value, rowHeight = 'small', className }: TableCellProps) {
+    const config = ROW_HEIGHT_CONFIG[rowHeight];
+
     return (
       <div
         className={cn(
-          'flex items-center h-[40px] px-3 py-2 text-sm overflow-hidden',
+          'flex px-3 py-2 text-sm overflow-hidden',
+          // Field-type-specific alignment
+          field.type === 'select' && rowHeight !== 'small' ? 'items-start pt-1.5' : 'items-start',
           className
         )}
+        style={{ height: config.height }}
       >
-        {renderCellValue(field, value)}
+        {renderCellValue(field, value, rowHeight)}
       </div>
     );
   },
@@ -190,6 +225,7 @@ export const TableCell = memo(
       prevProps.field.width === nextProps.field.width &&
       prevProps.field.options === nextProps.field.options &&
       prevProps.value === nextProps.value &&
+      prevProps.rowHeight === nextProps.rowHeight &&
       prevProps.className === nextProps.className
     );
   }

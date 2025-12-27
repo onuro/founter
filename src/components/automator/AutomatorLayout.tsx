@@ -142,13 +142,13 @@ export function AutomatorLayout() {
       <Card>
         <CardHeader>
           <div className="flex items-center flex-1 justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary" />
+            <div className="flex items-center gap-4">
+              <div className="size-12 rounded-lg bg-foreground/10 flex items-center justify-center">
+                <Zap className="size-6 text-foreground" />
               </div>
-              <div>
+              <div className="space-y-2">
                 <CardTitle>Automations</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-muted-foreground">
                   Automate workflows with Baserow and AI
                 </p>
               </div>

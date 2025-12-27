@@ -189,7 +189,7 @@ export function TablesSidebar({
   return (
     <div className="flex flex-col h-full sticky top-0 bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+      <div className="flex items-center justify-between px-3 py-3 border-b border-border">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Tables
         </h2>

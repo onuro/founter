@@ -31,7 +31,8 @@
       "Bash(brew install:*)",
       "Bash(pgrep:*)",
       "Bash(sqlite3:*)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
