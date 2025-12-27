@@ -173,7 +173,9 @@ export async function executeResourceEnricher(
       duration: Date.now() - startTime,
       data: {
         hasMarkdown: !!crawlResult.markdown,
-        contentLength: crawlResult.markdown?.length || crawlResult.cleaned_html?.length || 0,
+        contentLength: typeof crawlResult.markdown === 'string'
+          ? crawlResult.markdown.length
+          : crawlResult.cleaned_html?.length || 0,
       },
     });
   } catch (error) {
