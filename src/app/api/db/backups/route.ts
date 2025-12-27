@@ -4,13 +4,15 @@ import path from 'path';
 
 const BACKUPS_DIR = path.join(process.cwd(), 'backups');
 
-// Parse DATABASE_URL to get actual db path (format: file:./path/to/db or file:/absolute/path)
+// Parse DATABASE_URL to get actual db path
+// Prisma resolves relative paths from schema.prisma location (prisma/), not project root
 function getDbPath(): string {
-  const dbUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db';
+  const dbUrl = process.env.DATABASE_URL || 'file:./dev.db';
   const filePath = dbUrl.replace('file:', '');
 
   if (filePath.startsWith('./') || filePath.startsWith('../')) {
-    return path.join(process.cwd(), filePath);
+    // Resolve relative to prisma/ directory (where schema.prisma lives)
+    return path.join(process.cwd(), 'prisma', filePath);
   }
   return filePath;
 }

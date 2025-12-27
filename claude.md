@@ -10,6 +10,7 @@
 - When I ask you about something and it is something you can build, you will start by "Hallederiz guzel abim".
 - When you're planning anything related to NextJs, always remember with version 16 App Router and proxy.ts in replacement of middleware.ts.
 - When you're planning anything related to Tailwind, always remember with version 4.
+- When working with the SQLite database, in no circumstances wipe the database or do actions that would cause a delete/drop a table without my explicit permission. You need to inform me of any actions that would cause a delete/drop a table.
 </instructions>
 
 ### What It Does
