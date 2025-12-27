@@ -17,7 +17,7 @@ interface ImageInputProps {
 }
 
 export function ImageInput({ field, value, onChange, tableId }: ImageInputProps) {
-  const [inputMode, setInputMode] = useState<'url' | 'upload'>('url');
+  const [inputMode, setInputMode] = useState<'url' | 'upload'>('upload');
   const [urlValue, setUrlValue] = useState(value || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -93,6 +93,7 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
             <Expand className="w-8 h-8 text-white" />
           </div>
           <Button
+            type="button"
             variant="secondary"
             size="icon-sm"
             className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -118,14 +119,7 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
       <div className="space-y-2">
         <div className="flex gap-2">
           <Button
-            variant={inputMode === 'url' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setInputMode('url')}
-            className="text-xs"
-          >
-            URL
-          </Button>
-          <Button
+            type="button"
             variant={inputMode === 'upload' ? 'secondary' : 'ghost'}
             size="sm"
             onClick={() => setInputMode('upload')}
@@ -133,11 +127,20 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
           >
             Upload
           </Button>
+          <Button
+            type="button"
+            variant={inputMode === 'url' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => setInputMode('url')}
+            className="text-xs"
+          >
+            URL
+          </Button>
         </div>
 
         {inputMode === 'url' ? (
           <Input
-            type="url"
+            type="text"
             value={urlValue}
             onChange={(e) => handleUrlChange(e.target.value)}
             placeholder="https://example.com/image.jpg"

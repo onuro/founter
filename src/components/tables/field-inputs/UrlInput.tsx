@@ -29,6 +29,7 @@ export function UrlInput({ field, value, onChange }: UrlInputProps) {
         />
         {value && (
           <Button
+            type="button"
             variant="ghost"
             size="icon"
             onClick={() => window.open(value, '_blank')}

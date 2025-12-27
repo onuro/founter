@@ -61,6 +61,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
       <Popover open={isOpen} onOpenChange={setIsOpen}>
         <PopoverTrigger asChild>
           <Button
+            type="button"
             variant="secondary"
             className="w-full justify-start h-auto min-h-[40px] px-3 py-2 font-normal"
           >
@@ -119,6 +120,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
               const color = getTagColor(choice.color);
               return (
                 <button
+                  type="button"
                   key={choice.id}
                   onClick={() => toggleChoice(choice.id)}
                   className={cn(

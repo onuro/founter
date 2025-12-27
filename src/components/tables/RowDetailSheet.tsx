@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Trash2, Save, X } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useForm } from 'react-hook-form';
+import { Trash2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Form } from '@/components/ui/form';
 import {
   Sheet,
   SheetContent,
@@ -33,6 +34,37 @@ interface RowDetailSheetProps {
   isNew?: boolean;
 }
 
+function getDefaultValues(fields: Field[], row: Row | null): Record<string, unknown> {
+  if (row) return row.values;
+
+  const defaults: Record<string, unknown> = {};
+  fields.forEach((field) => {
+    switch (field.type) {
+      case 'text':
+      case 'url':
+      case 'longText':
+        defaults[field.id] = '';
+        break;
+      case 'number':
+        defaults[field.id] = null;
+        break;
+      case 'select':
+        defaults[field.id] = [];
+        break;
+      case 'date':
+        defaults[field.id] = null;
+        break;
+      case 'boolean':
+        defaults[field.id] = false;
+        break;
+      case 'image':
+        defaults[field.id] = null;
+        break;
+    }
+  });
+  return defaults;
+}
+
 export function RowDetailSheet({
   open,
   onOpenChange,
@@ -43,50 +75,19 @@ export function RowDetailSheet({
   onDelete,
   isNew = false,
 }: RowDetailSheetProps) {
-  const [values, setValues] = useState<Record<string, unknown>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Initialize values when row changes
+  const form = useForm<Record<string, unknown>>({
+    defaultValues: getDefaultValues(fields, row),
+  });
+
+  // Reset form when row changes
   useEffect(() => {
-    if (row) {
-      setValues(row.values);
-    } else {
-      // Initialize with default values for new row
-      const defaults: Record<string, unknown> = {};
-      fields.forEach((field) => {
-        switch (field.type) {
-          case 'text':
-          case 'url':
-          case 'longText':
-            defaults[field.id] = '';
-            break;
-          case 'number':
-            defaults[field.id] = null;
-            break;
-          case 'select':
-            defaults[field.id] = [];
-            break;
-          case 'date':
-            defaults[field.id] = null;
-            break;
-          case 'boolean':
-            defaults[field.id] = false;
-            break;
-          case 'image':
-            defaults[field.id] = null;
-            break;
-        }
-      });
-      setValues(defaults);
-    }
-  }, [row, fields]);
+    form.reset(getDefaultValues(fields, row));
+  }, [row, fields, form]);
 
-  const updateValue = (fieldId: string, value: unknown) => {
-    setValues((prev) => ({ ...prev, [fieldId]: value }));
-  };
-
-  const handleSave = async () => {
+  const onSubmit = async (values: Record<string, unknown>) => {
     setIsSaving(true);
     try {
       await onSave(values);
@@ -112,7 +113,7 @@ export function RowDetailSheet({
   };
 
   const renderFieldInput = (field: Field) => {
-    const value = values[field.id];
+    const value = form.watch(field.id);
 
     switch (field.type as FieldType) {
       case 'text':
@@ -120,7 +121,7 @@ export function RowDetailSheet({
           <TextInput
             field={field}
             value={value as string}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
           />
         );
       case 'number':
@@ -128,7 +129,7 @@ export function RowDetailSheet({
           <NumberInput
             field={field}
             value={value as number | null}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
           />
         );
       case 'url':
@@ -136,7 +137,7 @@ export function RowDetailSheet({
           <UrlInput
             field={field}
             value={value as string}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
           />
         );
       case 'select':
@@ -144,7 +145,7 @@ export function RowDetailSheet({
           <SelectInput
             field={field}
             value={value as string | string[]}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
           />
         );
       case 'date':
@@ -152,7 +153,7 @@ export function RowDetailSheet({
           <DateInput
             field={field}
             value={value as string | null}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
           />
         );
       case 'boolean':
@@ -160,7 +161,7 @@ export function RowDetailSheet({
           <BooleanInput
             field={field}
             value={value as boolean}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
           />
         );
       case 'longText':
@@ -168,7 +169,7 @@ export function RowDetailSheet({
           <LongTextInput
             field={field}
             value={value as string}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
           />
         );
       case 'image':
@@ -176,7 +177,7 @@ export function RowDetailSheet({
           <ImageInput
             field={field}
             value={value as string | null}
-            onChange={(v) => updateValue(field.id, v)}
+            onChange={(v) => form.setValue(field.id, v)}
             tableId={tableId}
           />
         );
@@ -192,48 +193,50 @@ export function RowDetailSheet({
           <SheetTitle>{isNew ? 'Add Row' : 'Edit Row'}</SheetTitle>
         </SheetHeader>
 
-        {/* Form fields */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-6">
-          {fields.map((field) => (
-            <div key={field.id}>{renderFieldInput(field)}</div>
-          ))}
-        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
+            {/* Form fields */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6">
+              {fields.map((field) => (
+                <div key={field.id}>{renderFieldInput(field)}</div>
+              ))}
+            </div>
 
-        {/* Actions */}
-        <div className="shrink-0 flex items-center justify-between p-4 border-t border-border">
-          {!isNew && onDelete ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              disabled={isDeleting || isSaving}
-              className="text-destructive hover:text-destructive"
-            >
-              <Trash2 className="w-4 h-4 mr-1" />
-              {isDeleting ? 'Deleting...' : 'Delete'}
-            </Button>
-          ) : (
-            <div />
-          )}
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => onOpenChange(false)}
-              disabled={isSaving}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={isSaving}
-            >
-              <Save className="w-4 h-4 mr-1" />
-              {isSaving ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
-        </div>
+            {/* Actions */}
+            <div className="shrink-0 flex items-center justify-between p-4 border-t border-border">
+              {!isNew && onDelete ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDelete}
+                  disabled={isDeleting || isSaving}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4 mr-1" />
+                  {isDeleting ? 'Deleting...' : 'Delete'}
+                </Button>
+              ) : (
+                <div />
+              )}
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isSaving}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" size="sm" disabled={isSaving}>
+                  <Save className="w-4 h-4 mr-1" />
+                  {isSaving ? 'Saving...' : 'Save'}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </Form>
       </SheetContent>
     </Sheet>
   );
