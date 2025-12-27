@@ -3,7 +3,19 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const BACKUPS_DIR = path.join(process.cwd(), 'backups');
-const DB_PATH = path.join(process.cwd(), 'prisma', 'dev.db');
+
+// Parse DATABASE_URL to get actual db path (format: file:./path/to/db or file:/absolute/path)
+function getDbPath(): string {
+  const dbUrl = process.env.DATABASE_URL || 'file:./prisma/dev.db';
+  const filePath = dbUrl.replace('file:', '');
+
+  if (filePath.startsWith('./') || filePath.startsWith('../')) {
+    return path.join(process.cwd(), filePath);
+  }
+  return filePath;
+}
+
+const DB_PATH = getDbPath();
 
 export interface BackupInfo {
   id: string;
