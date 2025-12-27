@@ -19,14 +19,30 @@ export function TableRow({
   onClick,
   className,
 }: TableRowProps) {
+  const handleClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+
+    // Don't open detail sheet if:
+    // 1. Clicking on image thumbnail (lightbox trigger)
+    // 2. ANY dialog is currently open (prevents portal click leakage)
+    if (
+      target.closest('[data-lightbox-trigger]') ||
+      document.querySelector('[role="dialog"]')
+    ) {
+      return;
+    }
+
+    onClick?.();
+  };
+
   return (
     <div
       className={cn(
-        'flex items-center border-b border-border hover:bg-neutral-950/50 transition-colors cursor-pointer',
+        'flex items-center border-b border-border bg-neutral-950 hover:bg-neutral-950/50 transition-colors cursor-pointer',
         isSelected && 'bg-neutral-950/70',
         className
       )}
-      onClick={onClick}
+      onClick={handleClick}
     >
       {fields.map((field) => (
         <div

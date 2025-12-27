@@ -151,7 +151,7 @@ export async function PUT(
   try {
     const { id, fieldId } = await params;
     const body = await request.json();
-    const { name, type, options, width, required } = body;
+    const { name, type, options, width, required, cleanupChoiceIds } = body;
 
     // Check if field exists and belongs to table
     const existing = await prisma.field.findUnique({
@@ -188,6 +188,39 @@ export async function PUT(
       if (conversionResult.options && !options?.choices?.length) {
         finalOptions = conversionResult.options;
       }
+    }
+
+    // Clean up rows if choice IDs are being removed
+    if (cleanupChoiceIds && Array.isArray(cleanupChoiceIds) && cleanupChoiceIds.length > 0) {
+      const rows = await prisma.row.findMany({ where: { tableId: id } });
+      const choiceIdsToRemove = new Set(cleanupChoiceIds);
+
+      await prisma.$transaction(
+        rows
+          .filter((row) => {
+            const values = row.values as Record<string, unknown>;
+            const fieldValue = values[fieldId];
+            if (fieldValue === null || fieldValue === undefined) return false;
+            const valueArray = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+            return valueArray.some((v) => choiceIdsToRemove.has(String(v)));
+          })
+          .map((row) => {
+            const values = row.values as Record<string, unknown>;
+            const fieldValue = values[fieldId];
+            const valueArray = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+            const filteredValues = valueArray.filter((v) => !choiceIdsToRemove.has(String(v)));
+
+            return prisma.row.update({
+              where: { id: row.id },
+              data: {
+                values: {
+                  ...values,
+                  [fieldId]: filteredValues.length > 0 ? filteredValues : null,
+                } as object,
+              },
+            });
+          })
+      );
     }
 
     // Update field

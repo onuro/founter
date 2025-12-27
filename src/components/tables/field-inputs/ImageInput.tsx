@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2, Expand } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import type { Field } from '@/types/tables';
+import { Lightbox } from '@/components/ui/lightbox';
 
 interface ImageInputProps {
   field: Field;
@@ -19,6 +20,7 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
   const [inputMode, setInputMode] = useState<'url' | 'upload'>('url');
   const [urlValue, setUrlValue] = useState(value || '');
   const [isUploading, setIsUploading] = useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUrlChange = (url: string) => {
@@ -73,24 +75,43 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
 
       {/* Preview */}
       {value && (
-        <div className="relative w-full aspect-video rounded-md overflow-hidden bg-neutral-800 mb-2">
+        <div className="relative w-full aspect-video rounded-md overflow-hidden bg-neutral-800 mb-2 group">
           <img
             src={value}
             alt=""
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain cursor-pointer"
+            onClick={() => setIsLightboxOpen(true)}
             onError={(e) => {
               (e.target as HTMLImageElement).src = '';
             }}
           />
+          {/* Expand button overlay */}
+          <div
+            className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+            onClick={() => setIsLightboxOpen(true)}
+          >
+            <Expand className="w-8 h-8 text-white" />
+          </div>
           <Button
             variant="secondary"
             size="icon-sm"
-            className="absolute top-2 right-2"
+            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
             onClick={clearImage}
           >
             <X className="w-4 h-4" />
           </Button>
         </div>
+      )}
+
+      {/* Lightbox */}
+      {value && (
+        <Lightbox
+          image={{ src: value }}
+          open={isLightboxOpen}
+          onOpenChange={setIsLightboxOpen}
+          showTitle={false}
+          showFooter={false}
+        />
       )}
 
       {/* Input */}

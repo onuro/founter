@@ -112,6 +112,7 @@ export interface UpdateFieldInput {
   options?: FieldOptions;
   width?: number;
   required?: boolean;
+  cleanupChoiceIds?: string[];
 }
 
 export interface CreateRowInput {

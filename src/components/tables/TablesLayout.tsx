@@ -38,6 +38,7 @@ export function TablesLayout() {
   const {
     table,
     isLoading: isLoadingTable,
+    refetch: refetchTable,
     createField,
     updateField,
     deleteField,
@@ -163,10 +164,14 @@ export function TablesLayout() {
   );
 
   const handleSaveField = useCallback(
-    async (input: CreateFieldInput) => {
+    async (input: CreateFieldInput, cleanupChoiceIds?: string[]) => {
       try {
         if (editingField) {
-          await updateField(editingField.id, input);
+          await updateField(editingField.id, { ...input, cleanupChoiceIds });
+          // Refetch table if rows were cleaned up to update row state
+          if (cleanupChoiceIds && cleanupChoiceIds.length > 0) {
+            await refetchTable();
+          }
           toast.success('Field updated');
         } else {
           await createField(input);
@@ -177,7 +182,7 @@ export function TablesLayout() {
         throw error;
       }
     },
-    [editingField, createField, updateField]
+    [editingField, createField, updateField, refetchTable]
   );
 
   const handleAddRow = useCallback(() => {
@@ -226,7 +231,7 @@ export function TablesLayout() {
   const selectedRow = table?.rows.find((r) => r.id === selectedRowId) || null;
 
   return (
-    <div className="grid grid-cols-[260px_1fr] h-[calc(100vh-4.8rem)] ml-2.5 mr-5 rounded-md overflow-hidden">
+    <div className="grid grid-cols-[260px_1fr] h-[calc(100vh-5.8rem)] ml-2.5 mr-5 rounded-md overflow-hidden">
       {/* Sidebar */}
       <div className="border-r border-border">
         <TablesSidebar
@@ -269,6 +274,7 @@ export function TablesLayout() {
         onOpenChange={setIsAddFieldOpen}
         onAdd={handleSaveField}
         existingField={editingField}
+        tableId={tableId}
       />
 
       <RowDetailSheet

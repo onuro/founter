@@ -1,9 +1,11 @@
 'use client';
 
+import { useState } from 'react';
 import { Check, ExternalLink, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Field, FieldType, SelectFieldOptions, SelectChoice } from '@/types/tables';
 import { TAG_COLORS } from '@/types/tables';
+import { Lightbox } from '@/components/ui/lightbox';
 
 interface TableCellProps {
   field: Field;
@@ -57,6 +59,40 @@ function renderSelectValue(
         );
       })}
     </div>
+  );
+}
+
+interface ImageCellProps {
+  src: string;
+}
+
+function ImageCell({ src }: ImageCellProps) {
+  const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+
+  return (
+    <>
+      <div
+        data-lightbox-trigger
+        className="w-8 h-8 rounded overflow-hidden bg-neutral-800 cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+        onClick={() => setIsLightboxOpen(true)}
+      >
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover pointer-events-none"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+          }}
+        />
+      </div>
+      <Lightbox
+        image={{ src }}
+        open={isLightboxOpen}
+        onOpenChange={setIsLightboxOpen}
+        showTitle={false}
+        showFooter={false}
+      />
+    </>
   );
 }
 
@@ -126,18 +162,7 @@ function renderCellValue(field: Field, value: unknown): React.ReactNode {
 
     case 'image':
       const imgUrl = String(value);
-      return imgUrl ? (
-        <div className="w-8 h-8 rounded overflow-hidden bg-neutral-800">
-          <img
-            src={imgUrl}
-            alt=""
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = 'none';
-            }}
-          />
-        </div>
-      ) : null;
+      return imgUrl ? <ImageCell src={imgUrl} /> : null;
 
     default:
       return <span className="truncate">{String(value)}</span>;
