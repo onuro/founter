@@ -24,7 +24,9 @@
       "Skill(sql-expert:*)",
       "Skill(founter-design)",
       "Skill(founter-design:*)",
-      "Bash(npx prisma db push)"
+      "Bash(npx prisma db push)",
+      "Bash(ls:*)",
+      "Bash(wc:*)"
     ]
   }
 }

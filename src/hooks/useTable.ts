@@ -13,32 +13,87 @@ import type {
 
 interface UseTableOptions {
   immediate?: boolean;
+  paginate?: boolean;
+  pageSize?: number;
 }
 
 export function useTable(tableId: string | null, options: UseTableOptions = {}) {
-  const { immediate = true } = options;
+  const { immediate = true, paginate = false, pageSize = 100 } = options;
   const [table, setTable] = useState<CustomTable | null>(null);
   const [isLoading, setIsLoading] = useState(immediate && !!tableId);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalRows, setTotalRows] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
 
   const fetchTable = useCallback(async () => {
     if (!tableId) return;
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/tables/${tableId}`);
-      const data = await res.json();
-      if (data.success) {
-        setTable(data.data);
+      if (paginate) {
+        // Fetch table structure without rows, then fetch first page of rows
+        const [tableRes, rowsRes] = await Promise.all([
+          fetch(`/api/tables/${tableId}?includeRows=false`),
+          fetch(`/api/tables/${tableId}/rows?page=1&limit=${pageSize}`),
+        ]);
+        const tableData = await tableRes.json();
+        const rowsData = await rowsRes.json();
+
+        if (tableData.success && rowsData.success) {
+          setTable({
+            ...tableData.data,
+            rows: rowsData.data,
+          });
+          setTotalRows(rowsData.pagination.total);
+          setHasMore(rowsData.pagination.page < rowsData.pagination.totalPages);
+          setCurrentPage(1);
+        } else {
+          setError(tableData.error || rowsData.error || 'Failed to fetch table');
+        }
       } else {
-        setError(data.error || 'Failed to fetch table');
+        // Original behavior - fetch everything
+        const res = await fetch(`/api/tables/${tableId}`);
+        const data = await res.json();
+        if (data.success) {
+          setTable(data.data);
+          setTotalRows(data.data.rows?.length || 0);
+        } else {
+          setError(data.error || 'Failed to fetch table');
+        }
       }
     } catch {
       setError('Failed to fetch table');
     } finally {
       setIsLoading(false);
     }
-  }, [tableId]);
+  }, [tableId, paginate, pageSize]);
+
+  const loadMoreRows = useCallback(async () => {
+    if (!tableId || !paginate || !hasMore || isLoadingMore) return;
+
+    setIsLoadingMore(true);
+    try {
+      const nextPage = currentPage + 1;
+      const res = await fetch(`/api/tables/${tableId}/rows?page=${nextPage}&limit=${pageSize}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setTable((prev) =>
+          prev ? { ...prev, rows: [...prev.rows, ...data.data] } : prev
+        );
+        setCurrentPage(nextPage);
+        setHasMore(data.pagination.page < data.pagination.totalPages);
+      }
+    } catch {
+      // Silently fail, user can try again
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [tableId, paginate, hasMore, isLoadingMore, currentPage, pageSize]);
 
   useEffect(() => {
     if (immediate && tableId) {
@@ -225,8 +280,13 @@ export function useTable(tableId: string | null, options: UseTableOptions = {}) 
     table,
     setTable,
     isLoading,
+    isLoadingMore,
     error,
     refetch: fetchTable,
+    // Pagination
+    totalRows,
+    hasMore,
+    loadMoreRows,
     // Field mutations
     createField,
     updateField,

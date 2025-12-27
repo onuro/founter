@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { Check, ExternalLink, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Field, FieldType, SelectFieldOptions, SelectChoice } from '@/types/tables';
@@ -66,7 +66,7 @@ interface ImageCellProps {
   src: string;
 }
 
-function ImageCell({ src }: ImageCellProps) {
+const ImageCell = memo(function ImageCell({ src }: ImageCellProps) {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
 
   return (
@@ -94,7 +94,7 @@ function ImageCell({ src }: ImageCellProps) {
       />
     </>
   );
-}
+});
 
 function renderCellValue(field: Field, value: unknown): React.ReactNode {
   const type = field.type as FieldType;
@@ -169,15 +169,28 @@ function renderCellValue(field: Field, value: unknown): React.ReactNode {
   }
 }
 
-export function TableCell({ field, value, className }: TableCellProps) {
-  return (
-    <div
-      className={cn(
-        'flex items-center min-h-[40px] px-3 py-2 text-sm',
-        className
-      )}
-    >
-      {renderCellValue(field, value)}
-    </div>
-  );
-}
+export const TableCell = memo(
+  function TableCell({ field, value, className }: TableCellProps) {
+    return (
+      <div
+        className={cn(
+          'flex items-center h-[40px] px-3 py-2 text-sm overflow-hidden',
+          className
+        )}
+      >
+        {renderCellValue(field, value)}
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison for optimal memoization
+    return (
+      prevProps.field.id === nextProps.field.id &&
+      prevProps.field.type === nextProps.field.type &&
+      prevProps.field.width === nextProps.field.width &&
+      prevProps.field.options === nextProps.field.options &&
+      prevProps.value === nextProps.value &&
+      prevProps.className === nextProps.className
+    );
+  }
+);

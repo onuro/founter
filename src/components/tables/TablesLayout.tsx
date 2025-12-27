@@ -38,7 +38,11 @@ export function TablesLayout() {
   const {
     table,
     isLoading: isLoadingTable,
+    isLoadingMore,
     refetch: refetchTable,
+    totalRows,
+    hasMore,
+    loadMoreRows,
     createField,
     updateField,
     deleteField,
@@ -46,7 +50,7 @@ export function TablesLayout() {
     createRow,
     updateRow,
     deleteRow,
-  } = useTable(tableId || null);
+  } = useTable(tableId || null, { paginate: true, pageSize: 100 });
 
   // Auto-select first table if none selected
   useEffect(() => {
@@ -259,6 +263,10 @@ export function TablesLayout() {
           onResizeField={handleResizeField}
           onAddRow={handleAddRow}
           isLoading={isLoadingTable}
+          totalRows={totalRows}
+          hasMore={hasMore}
+          isLoadingMore={isLoadingMore}
+          onLoadMore={loadMoreRows}
         />
       </div>
 

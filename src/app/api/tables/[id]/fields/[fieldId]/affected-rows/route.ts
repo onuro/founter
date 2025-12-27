@@ -40,37 +40,53 @@ export async function GET(
       );
     }
 
-    // Get all rows for this table
-    const rows = await prisma.row.findMany({
-      where: { tableId },
-    });
-
-    // Count rows affected by each choice ID
+    // Process rows in batches to avoid memory issues with large tables
+    const BATCH_SIZE = 1000;
     const breakdown: Record<string, number> = {};
     let total = 0;
     const countedRows = new Set<string>();
+    let cursor: string | undefined;
 
+    // Initialize breakdown
     for (const choiceId of choiceIds) {
       breakdown[choiceId] = 0;
     }
 
-    for (const row of rows) {
-      const values = row.values as Record<string, unknown>;
-      const fieldValue = values[fieldId];
+    // Process in batches using cursor pagination
+    while (true) {
+      const rows = await prisma.row.findMany({
+        where: { tableId },
+        take: BATCH_SIZE,
+        ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
+        orderBy: { id: 'asc' },
+        select: { id: true, values: true },
+      });
 
-      if (fieldValue === null || fieldValue === undefined) continue;
+      if (rows.length === 0) break;
 
-      const valueArray = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+      for (const row of rows) {
+        const values = row.values as Record<string, unknown>;
+        const fieldValue = values[fieldId];
 
-      for (const choiceId of choiceIds) {
-        if (valueArray.includes(choiceId)) {
-          breakdown[choiceId]++;
-          if (!countedRows.has(row.id)) {
-            countedRows.add(row.id);
-            total++;
+        if (fieldValue === null || fieldValue === undefined) continue;
+
+        const valueArray = Array.isArray(fieldValue) ? fieldValue : [fieldValue];
+
+        for (const choiceId of choiceIds) {
+          if (valueArray.includes(choiceId)) {
+            breakdown[choiceId]++;
+            if (!countedRows.has(row.id)) {
+              countedRows.add(row.id);
+              total++;
+            }
           }
         }
       }
+
+      cursor = rows[rows.length - 1].id;
+
+      // If we got fewer rows than batch size, we're done
+      if (rows.length < BATCH_SIZE) break;
     }
 
     return NextResponse.json({

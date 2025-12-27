@@ -67,6 +67,8 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const includeRows = searchParams.get('includeRows') !== 'false';
 
     const table = await prisma.customTable.findUnique({
       where: { id },
@@ -74,9 +76,11 @@ export async function GET(
         fields: {
           orderBy: { order: 'asc' },
         },
-        rows: {
-          orderBy: { order: 'asc' },
-        },
+        ...(includeRows && {
+          rows: {
+            orderBy: { order: 'asc' },
+          },
+        }),
       },
     });
 
@@ -87,9 +91,15 @@ export async function GET(
       );
     }
 
+    // When not including rows, return empty array for rows
+    const tableData = {
+      ...table,
+      rows: includeRows ? table.rows : [],
+    };
+
     return NextResponse.json({
       success: true,
-      data: transformTable(table),
+      data: transformTable(tableData as typeof table),
     });
   } catch (error) {
     console.error('Failed to fetch table:', error);

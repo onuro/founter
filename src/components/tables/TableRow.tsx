@@ -1,5 +1,6 @@
 'use client';
 
+import { memo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type { Field, Row } from '@/types/tables';
 import { TableCell } from './TableCell';
@@ -12,47 +13,60 @@ interface TableRowProps {
   className?: string;
 }
 
-export function TableRow({
-  row,
-  fields,
-  isSelected,
-  onClick,
-  className,
-}: TableRowProps) {
-  const handleClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
+export const TableRow = memo(
+  function TableRow({
+    row,
+    fields,
+    isSelected,
+    onClick,
+    className,
+  }: TableRowProps) {
+    const handleClick = useCallback(
+      (e: React.MouseEvent) => {
+        const target = e.target as HTMLElement;
 
-    // Don't open detail sheet if:
-    // 1. Clicking on image thumbnail (lightbox trigger)
-    // 2. ANY dialog is currently open (prevents portal click leakage)
-    if (
-      target.closest('[data-lightbox-trigger]') ||
-      document.querySelector('[role="dialog"]')
-    ) {
-      return;
-    }
+        // Don't open detail sheet if:
+        // 1. Clicking on image thumbnail (lightbox trigger)
+        // 2. ANY dialog is currently open (prevents portal click leakage)
+        if (
+          target.closest('[data-lightbox-trigger]') ||
+          document.querySelector('[role="dialog"]')
+        ) {
+          return;
+        }
 
-    onClick?.();
-  };
+        onClick?.();
+      },
+      [onClick]
+    );
 
-  return (
-    <div
-      className={cn(
-        'flex items-center border-b border-border bg-neutral-950 hover:bg-neutral-950/50 transition-colors cursor-pointer',
-        isSelected && 'bg-neutral-950/70',
-        className
-      )}
-      onClick={handleClick}
-    >
-      {fields.map((field) => (
-        <div
-          key={field.id}
-          style={{ width: field.width, minWidth: field.width, maxWidth: field.width }}
-          className="border-r border-border last:border-r-0"
-        >
-          <TableCell field={field} value={row.values[field.id]} />
-        </div>
-      ))}
-    </div>
-  );
-}
+    return (
+      <div
+        className={cn(
+          'flex items-center h-[40px] border-b border-border bg-neutral-950 hover:bg-neutral-950/50 transition-colors cursor-pointer',
+          isSelected && 'bg-neutral-950/70',
+          className
+        )}
+        onClick={handleClick}
+      >
+        {fields.map((field) => (
+          <div
+            key={field.id}
+            style={{ width: field.width, minWidth: field.width, maxWidth: field.width }}
+            className="border-r border-border last:border-r-0"
+          >
+            <TableCell field={field} value={row.values[field.id]} />
+          </div>
+        ))}
+      </div>
+    );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.row.id === nextProps.row.id &&
+      prevProps.row.updatedAt === nextProps.row.updatedAt &&
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.fields === nextProps.fields
+    );
+  }
+);
