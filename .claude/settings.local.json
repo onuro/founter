@@ -26,7 +26,12 @@
       "Skill(founter-design:*)",
       "Bash(npx prisma db push)",
       "Bash(ls:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(cd /Users/onuroztaskiran/FE\\\\ Apps/founter && npx prisma generate:*)",
+      "Bash(brew install:*)",
+      "Bash(pgrep:*)",
+      "Bash(sqlite3:*)",
+      "Bash(node -e:*)"
     ]
   }
 }

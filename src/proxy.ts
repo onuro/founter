@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const publicPaths = ['/login', '/api/auth/login', '/api/auth/logout'];
+const publicPaths = ['/login', '/api/auth/login', '/api/auth/logout', '/api/webhooks'];
 const ignoredPaths = ['/_next', '/favicon.ico'];
 
 export default function proxy(request: NextRequest) {

@@ -25,6 +25,9 @@ export async function GET() {
       data: {
         baserowToken: settings.baserowToken ? maskKey(settings.baserowToken) : '',
         baserowTokenDescription: settings.baserowTokenDescription || '',
+        baserowHost: settings.baserowHost || '',
+        baserowUsername: settings.baserowUsername || '',
+        baserowPassword: settings.baserowPassword ? maskKey(settings.baserowPassword) : '',
         openaiKey: settings.openaiKey ? maskKey(settings.openaiKey) : '',
         openaiKeyDescription: settings.openaiKeyDescription || '',
         anthropicKey: settings.anthropicKey ? maskKey(settings.anthropicKey) : '',
@@ -48,6 +51,9 @@ export async function PUT(request: Request) {
     const {
       baserowToken,
       baserowTokenDescription,
+      baserowHost,
+      baserowUsername,
+      baserowPassword,
       openaiKey,
       openaiKeyDescription,
       anthropicKey,
@@ -63,6 +69,9 @@ export async function PUT(request: Request) {
     if (baserowToken !== undefined && !baserowToken.startsWith('••••')) {
       updateData.baserowToken = baserowToken || null;
     }
+    if (baserowPassword !== undefined && !baserowPassword.startsWith('••••')) {
+      updateData.baserowPassword = baserowPassword || null;
+    }
     if (openaiKey !== undefined && !openaiKey.startsWith('••••')) {
       updateData.openaiKey = openaiKey || null;
     }
@@ -71,6 +80,14 @@ export async function PUT(request: Request) {
     }
     if (glmKey !== undefined && !glmKey.startsWith('••••')) {
       updateData.glmKey = glmKey || null;
+    }
+
+    // Non-sensitive fields - always update if provided
+    if (baserowHost !== undefined) {
+      updateData.baserowHost = baserowHost || null;
+    }
+    if (baserowUsername !== undefined) {
+      updateData.baserowUsername = baserowUsername || null;
     }
 
     // Descriptions - always update if provided
@@ -102,6 +119,9 @@ export async function PUT(request: Request) {
       data: {
         baserowToken: settings.baserowToken ? maskKey(settings.baserowToken) : '',
         baserowTokenDescription: settings.baserowTokenDescription || '',
+        baserowHost: settings.baserowHost || '',
+        baserowUsername: settings.baserowUsername || '',
+        baserowPassword: settings.baserowPassword ? maskKey(settings.baserowPassword) : '',
         openaiKey: settings.openaiKey ? maskKey(settings.openaiKey) : '',
         openaiKeyDescription: settings.openaiKeyDescription || '',
         anthropicKey: settings.anthropicKey ? maskKey(settings.anthropicKey) : '',

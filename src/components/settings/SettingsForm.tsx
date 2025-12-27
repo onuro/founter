@@ -49,17 +49,78 @@ export function SettingsForm() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Database className="w-4 h-4" />
-            BaseRow
+            Baserow
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label
-              htmlFor="baserowToken"
+              htmlFor="baserowHost"
               className="text-xs uppercase tracking-wider text-muted-foreground"
             >
-              API Token
+              Host URL
             </Label>
+            <Input
+              id="baserowHost"
+              type="text"
+              value={settings.baserowHost}
+              onChange={(e) => handleInputChange('baserowHost', e.target.value)}
+              placeholder="https://baserow.example.com"
+            />
+            <p className="text-xs text-muted-foreground">
+              Your self-hosted Baserow instance URL
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label
+                htmlFor="baserowUsername"
+                className="text-xs uppercase tracking-wider text-muted-foreground"
+              >
+                Username / Email
+              </Label>
+              <Input
+                id="baserowUsername"
+                type="text"
+                value={settings.baserowUsername}
+                onChange={(e) => handleInputChange('baserowUsername', e.target.value)}
+                placeholder="user@example.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label
+                htmlFor="baserowPassword"
+                className="text-xs uppercase tracking-wider text-muted-foreground"
+              >
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="baserowPassword"
+                  type={showKeys.baserowPassword ? 'text' : 'password'}
+                  value={settings.baserowPassword}
+                  onChange={(e) => handleInputChange('baserowPassword', e.target.value)}
+                  placeholder="••••••••"
+                  className="pr-12"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey('baserowPassword')}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                >
+                  {showKeys.baserowPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground mb-2">API Token (optional, for Fetcher)</p>
             <div className="relative">
               <Input
                 id="baserowToken"
@@ -81,21 +142,13 @@ export function SettingsForm() {
                 )}
               </button>
             </div>
-          </div>
-          <div className="space-y-2">
-            <Label
-              htmlFor="baserowTokenDescription"
-              className="text-xs text-muted-foreground"
-            >
-              Description (optional)
-            </Label>
             <Input
               id="baserowTokenDescription"
               type="text"
               value={settings.baserowTokenDescription}
               onChange={(e) => handleInputChange('baserowTokenDescription', e.target.value)}
               placeholder="Add a note..."
-              className="text-sm"
+              className="text-sm mt-2"
             />
           </div>
         </CardContent>

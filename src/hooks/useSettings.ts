@@ -7,6 +7,9 @@ export function useSettings() {
   const [settings, setSettings] = useState<SettingsFormData>({
     baserowToken: '',
     baserowTokenDescription: '',
+    baserowHost: '',
+    baserowUsername: '',
+    baserowPassword: '',
     openaiKey: '',
     openaiKeyDescription: '',
     anthropicKey: '',

@@ -15,6 +15,9 @@ model Settings {
   id                      String   @id @default("default")
   baserowToken            String?
   baserowTokenDescription String?
+  baserowHost             String?  // "https://baserow.reaktorstudios.com"
+  baserowUsername         String?  // Email for JWT auth
+  baserowPassword         String?  // Password for JWT auth
   openaiKey               String?
   openaiKeyDescription    String?
   anthropicKey            String?
@@ -77,4 +80,35 @@ model Row {
   updatedAt DateTime    @updatedAt
 
   @@index([tableId])
+}
+
+// ==========================================
+// Automator Feature
+// ==========================================
+
+model Automation {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  type        String          // "resource_enricher"
+  enabled     Boolean         @default(true)
+  config      Json            // Type-specific configuration
+  runs        AutomationRun[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+model AutomationRun {
+  id           String     @id @default(cuid())
+  automationId String
+  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  status       String     // "pending" | "running" | "completed" | "failed"
+  trigger      Json       // Webhook payload or manual trigger info
+  steps        Json       // Array of step results with timing
+  error        String?
+  duration     Int?       // Duration in milliseconds
+  startedAt    DateTime   @default(now())
+  completedAt  DateTime?
+
+  @@index([automationId])
 }
