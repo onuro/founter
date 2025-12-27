@@ -1,9 +1,10 @@
 'use client';
 
-import { useCallback, useRef } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
+import { useCallback } from 'react';
+import { X, Image as ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { FileDropzone } from '@/components/ui/file-dropzone';
 import { UploadedImage } from '@/types/generator';
 
 interface ImageUploaderProps {
@@ -21,36 +22,15 @@ export function ImageUploader({
   isLoading,
   error,
 }: ImageUploaderProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent<HTMLDivElement>) => {
-      e.preventDefault();
-      const file = e.dataTransfer.files[0];
+  const handleFilesSelected = useCallback(
+    (files: FileList) => {
+      const file = files[0];
       if (file) {
         onUpload(file);
       }
     },
     [onUpload]
   );
-
-  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-  }, []);
-
-  const handleFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (file) {
-        onUpload(file);
-      }
-    },
-    [onUpload]
-  );
-
-  const handleClick = useCallback(() => {
-    inputRef.current?.click();
-  }, []);
 
   return (
     <Card>
@@ -59,14 +39,6 @@ export function ImageUploader({
         <CardTitle>Screenshot</CardTitle>
       </CardHeader>
       <CardContent>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-
         {image ? (
           <div className="space-y-3">
             <div className="relative aspect-video rounded-sm overflow-hidden bg-secondary">
@@ -91,33 +63,13 @@ export function ImageUploader({
             </div>
           </div>
         ) : (
-          <div className='bg-secondary p-1.5 rounded-md'>
-            <div
-              onClick={handleClick}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              className="rounded-sm p-8 text-center cursor-pointer shadow-inset-emboss-soft transition-all bg-muted hover:bg-neutral-900 hover:shadow-inset-emboss active:bg-muted active:shadow-none"
-            >
-              {isLoading ? (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                  <span className="text-muted-foreground">Loading...</span>
-                </div>
-              ) : (
-                <div className="flex flex-col items-center gap-3">
-                  <div className="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center">
-                    <Upload className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium">Drop image or click to browse</p>
-                    <p className="text-xs text-muted-foreground">
-                      PNG, JPG, WebP up to 10MB
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          <FileDropzone
+            onFilesSelected={handleFilesSelected}
+            accept="image/png,image/jpeg,image/webp"
+            isLoading={isLoading}
+            title="Drop image or click to browse"
+            description="PNG, JPG, WebP up to 10MB"
+          />
         )}
 
         {error && (

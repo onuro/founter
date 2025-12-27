@@ -1,16 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Plus, Check } from 'lucide-react';
+import { Check, ChevronsUpDown, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import type { Field, SelectFieldOptions, SelectChoice } from '@/types/tables';
 import { TAG_COLORS } from '@/types/tables';
 
@@ -26,7 +33,6 @@ function getTagColor(colorName: string) {
 
 export function SelectInput({ field, value, onChange }: SelectInputProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [newChoiceLabel, setNewChoiceLabel] = useState('');
 
   const options = field.options as SelectFieldOptions | null;
   const choices = options?.choices || [];
@@ -47,7 +53,8 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
     }
   };
 
-  const removeChoice = (choiceId: string) => {
+  const removeChoice = (choiceId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     onChange(selectedValues.filter((v) => v !== choiceId));
   };
 
@@ -62,12 +69,14 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
         <PopoverTrigger asChild>
           <Button
             type="button"
-            variant="secondary"
-            className="w-full justify-start h-auto min-h-[40px] px-3 py-2 font-normal"
+            variant="inputlike"
+            role="combobox"
+            aria-expanded={isOpen}
+            className="w-full justify-between h-auto min-h-10 px-3 py-2 font-normal"
           >
-            {selectedValues.length > 0 ? (
-              <div className="flex flex-wrap gap-1">
-                {selectedValues.map((v) => {
+            <div className="flex flex-wrap items-center gap-1 pr-2">
+              {selectedValues.length > 0 ? (
+                selectedValues.map((v) => {
                   const choice = choices.find((c: SelectChoice) => c.id === v);
 
                   // Handle orphan values (values not in choices list)
@@ -76,14 +85,11 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
                       <span
                         key={v}
                         className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-red-500/20 text-red-400 border border-red-500/30"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeChoice(v);
-                        }}
+                        onClick={(e) => removeChoice(v, e)}
                         title="Invalid value - click to remove"
                       >
                         {String(v)}
-                        <X className="w-3 h-3 cursor-pointer" />
+                        <X className="size-3 cursor-pointer" />
                       </span>
                     );
                   }
@@ -97,58 +103,57 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
                         color.bg,
                         color.text
                       )}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeChoice(v);
-                      }}
                     >
                       {choice.label}
-                      <X className="w-3 h-3 cursor-pointer" />
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="cursor-pointer hover:opacity-70"
+                        onClick={(e) => removeChoice(v, e)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            removeChoice(v, e as unknown as React.MouseEvent);
+                          }
+                        }}
+                      >
+                        <X className="size-3" />
+                      </span>
                     </span>
                   );
-                })}
-              </div>
-            ) : (
-              <span className="text-muted-foreground">Select options...</span>
-            )}
+                })
+              ) : (
+                <span className="text-muted-foreground">Select options...</span>
+              )}
+            </div>
+            <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground/80" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-2" align="start">
-          <div className="space-y-2">
-            {choices.map((choice: SelectChoice) => {
-              const isSelected = selectedValues.includes(choice.id);
-              const color = getTagColor(choice.color);
-              return (
-                <button
-                  type="button"
-                  key={choice.id}
-                  onClick={() => toggleChoice(choice.id)}
-                  className={cn(
-                    'w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-neutral-800 transition-colors',
-                    isSelected && 'bg-neutral-800'
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'w-4 h-4 rounded border flex items-center justify-center',
-                      isSelected ? 'bg-primary border-primary' : 'border-neutral-600'
-                    )}
-                  >
-                    {isSelected && <Check className="w-3 h-3 text-primary-foreground" />}
-                  </div>
-                  <span className={cn('px-2 py-0.5 rounded text-xs', color.bg, color.text)}>
-                    {choice.label}
-                  </span>
-                </button>
-              );
-            })}
-
-            {choices.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-2">
-                No options available
-              </p>
-            )}
-          </div>
+        <PopoverContent className="w-[--radix-popper-anchor-width] p-0" align="start">
+          <Command>
+            <CommandInput placeholder="Search options..." />
+            <CommandList>
+              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandGroup>
+                {choices.map((choice: SelectChoice) => {
+                  const isSelected = selectedValues.includes(choice.id);
+                  const color = getTagColor(choice.color);
+                  return (
+                    <CommandItem
+                      key={choice.id}
+                      value={choice.label}
+                      onSelect={() => toggleChoice(choice.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <span className={cn('px-2 py-0.5 rounded text-xs font-medium', color.bg, color.text)}>
+                        {choice.label}
+                      </span>
+                      {isSelected && <Check className="size-4 ml-auto" />}
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            </CommandList>
+          </Command>
         </PopoverContent>
       </Popover>
     </div>

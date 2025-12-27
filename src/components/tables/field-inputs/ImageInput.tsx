@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Upload, X, Loader2, Expand } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { useState } from 'react';
+import { X, Expand } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { FileDropzone } from '@/components/ui/file-dropzone';
 import type { Field } from '@/types/tables';
 import { Lightbox } from '@/components/ui/lightbox';
 
@@ -17,19 +18,17 @@ interface ImageInputProps {
 }
 
 export function ImageInput({ field, value, onChange, tableId }: ImageInputProps) {
-  const [inputMode, setInputMode] = useState<'url' | 'upload'>('upload');
   const [urlValue, setUrlValue] = useState(value || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUrlChange = (url: string) => {
     setUrlValue(url);
     onChange(url || null);
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFilesSelected = async (files: FileList) => {
+    const file = files[0];
     if (!file) return;
 
     setIsUploading(true);
@@ -61,9 +60,6 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
   const clearImage = () => {
     onChange(null);
     setUrlValue('');
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   return (
@@ -116,29 +112,22 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
       )}
 
       {/* Input */}
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <Button
-            type="button"
-            variant={inputMode === 'upload' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setInputMode('upload')}
-            className="text-xs"
-          >
-            Upload
-          </Button>
-          <Button
-            type="button"
-            variant={inputMode === 'url' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => setInputMode('url')}
-            className="text-xs"
-          >
-            URL
-          </Button>
-        </div>
-
-        {inputMode === 'url' ? (
+      <Tabs defaultValue="upload">
+        <TabsList>
+          <TabsTrigger value="upload">Upload</TabsTrigger>
+          <TabsTrigger value="url">URL</TabsTrigger>
+        </TabsList>
+        <TabsContent value="upload">
+          <FileDropzone
+            onFilesSelected={handleFilesSelected}
+            accept="image/*"
+            isLoading={isUploading}
+            title="Click to upload"
+            description="PNG, JPG, WebP"
+            loadingText="Uploading..."
+          />
+        </TabsContent>
+        <TabsContent value="url">
           <Input
             type="text"
             value={urlValue}
@@ -146,36 +135,8 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
             placeholder="https://example.com/image.jpg"
             className="bg-secondary"
           />
-        ) : (
-          <div
-            className={cn(
-              'flex flex-col items-center justify-center p-6 border-2 border-dashed border-neutral-700 rounded-md cursor-pointer hover:border-neutral-600 transition-colors',
-              isUploading && 'pointer-events-none opacity-50'
-            )}
-            onClick={() => !isUploading && fileInputRef.current?.click()}
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="w-8 h-8 text-muted-foreground mb-2 animate-spin" />
-                <p className="text-sm text-muted-foreground">Uploading...</p>
-              </>
-            ) : (
-              <>
-                <Upload className="w-8 h-8 text-muted-foreground mb-2" />
-                <p className="text-sm text-muted-foreground">Click to upload</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">PNG, JPG, WebP</p>
-              </>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </div>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
