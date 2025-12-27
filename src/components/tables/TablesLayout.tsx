@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'sonner';
-import { useTables } from '@/hooks/useTables';
+import { useTablesContext } from '@/contexts/TablesContext';
 import { useTable } from '@/hooks/useTable';
 import { TablesSidebar } from './TablesSidebar';
 import { TableView } from './TableView';
@@ -39,7 +39,7 @@ export function TablesLayout() {
     updateTable,
     deleteTable,
     reorderTables,
-  } = useTables();
+  } = useTablesContext();
 
   const {
     table,

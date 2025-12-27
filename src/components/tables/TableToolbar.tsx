@@ -1,6 +1,6 @@
 'use client';
 
-import { Rows3, Rows4, LayoutGrid } from 'lucide-react';
+import { Rows3, Rows4, LayoutGrid, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,6 +13,7 @@ import type { RowHeight } from '@/types/tables';
 interface TableToolbarProps {
   rowHeight: RowHeight;
   onRowHeightChange: (height: RowHeight) => void;
+  onAddRow: () => void;
   className?: string;
 }
 
@@ -25,6 +26,7 @@ const ROW_HEIGHT_OPTIONS: { value: RowHeight; label: string; icon: typeof Rows3 
 export function TableToolbar({
   rowHeight,
   onRowHeightChange,
+  onAddRow,
   className,
 }: TableToolbarProps) {
   return (
@@ -34,8 +36,16 @@ export function TableToolbar({
         className
       )}
     >
-      {/* Left side - placeholder for future controls */}
-      <div />
+      {/* Left side - Add row button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onAddRow}
+        className="h-7 px-2 text-muted-foreground hover:text-foreground"
+      >
+        <Plus className="w-4 h-4 mr-1" />
+        Add Row
+      </Button>
 
       {/* Right side - Row height toggle */}
       <div className="flex items-center gap-0.5 p-0.5 rounded-md bg-neutral-800/50">

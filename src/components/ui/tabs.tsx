@@ -2,19 +2,68 @@
 
 import * as React from "react"
 import * as TabsPrimitive from "@radix-ui/react-tabs"
+import { cva } from "class-variance-authority"
 
 import { cn } from "@/lib/utils"
 
+const tabsListVariants = cva(
+  "relative bg-secondary text-muted-foreground inline-flex w-full items-center justify-center rounded-md gap-1",
+  {
+    variants: {
+      size: {
+        default: "p-1",
+        sm: "p-0.5",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+    },
+  }
+)
+
+const tabsTriggerVariants = cva(
+  [
+    "relative z-10 inline-flex flex-1 items-center justify-center rounded-sm font-semibold uppercase tracking-wider transition-colors duration-200",
+    "text-muted-foreground hover:text-foreground",
+    "data-[state=active]:text-foreground",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+    "disabled:pointer-events-none disabled:opacity-50",
+    "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  ],
+  {
+    variants: {
+      size: {
+        default: "px-3 py-3 text-xs",
+        sm: "px-2 py-1.5 text-[10px]",
+      },
+    },
+    defaultVariants: {
+      size: "default",
+    },
+  }
+)
+
+type TabsSize = "default" | "sm"
+
+const TabsSizeContext = React.createContext<TabsSize>("default")
+
+interface TabsProps extends React.ComponentProps<typeof TabsPrimitive.Root> {
+  size?: TabsSize
+}
+
 function Tabs({
   className,
+  size = "default",
   ...props
-}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+}: TabsProps) {
   return (
-    <TabsPrimitive.Root
-      data-slot="tabs"
-      className={cn("flex flex-col gap-3", className)}
-      {...props}
-    />
+    <TabsSizeContext.Provider value={size}>
+      <TabsPrimitive.Root
+        data-slot="tabs"
+        className={cn("flex flex-col gap-3", className)}
+        {...props}
+      />
+    </TabsSizeContext.Provider>
   )
 }
 
@@ -22,6 +71,7 @@ function TabsList({
   className,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.List>) {
+  const size = React.useContext(TabsSizeContext)
   const [activeTabRect, setActiveTabRect] = React.useState<{
     left: number
     top: number
@@ -72,10 +122,7 @@ function TabsList({
     <TabsPrimitive.List
       ref={listRef}
       data-slot="tabs-list"
-      className={cn(
-        "relative bg-secondary text-muted-foreground inline-flex w-full items-center justify-center rounded-md p-1 gap-1",
-        className
-      )}
+      className={cn(tabsListVariants({ size }), className)}
       {...props}
     >
       {activeTabRect && (
@@ -98,18 +145,11 @@ function TabsTrigger({
   className,
   ...props
 }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  const size = React.useContext(TabsSizeContext)
   return (
     <TabsPrimitive.Trigger
       data-slot="tabs-trigger"
-      className={cn(
-        "relative z-10 inline-flex flex-1 items-center justify-center rounded-sm px-3 py-3 text-xs font-semibold uppercase tracking-wider transition-colors duration-200",
-        "text-muted-foreground hover:text-foreground",
-        "data-[state=active]:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        "disabled:pointer-events-none disabled:opacity-50",
-        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
+      className={cn(tabsTriggerVariants({ size }), className)}
       {...props}
     />
   )

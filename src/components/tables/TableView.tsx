@@ -125,6 +125,7 @@ export function TableView({
         <TableToolbar
           rowHeight={rowHeight}
           onRowHeightChange={onRowHeightChange}
+          onAddRow={onAddRow}
         />
       )}
 

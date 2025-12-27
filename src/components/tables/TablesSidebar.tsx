@@ -85,8 +85,8 @@ function SortableTableItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'group flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors',
-        isSelected ? 'bg-neutral-800' : 'hover:bg-neutral-800/50',
+        'group flex items-center gap-2 px-2 py-1.5 rounded-sm transition-colors',
+        isSelected ? 'bg-neutral-800/50' : 'hover:bg-neutral-900',
         isDragging && 'opacity-50'
       )}
     >
