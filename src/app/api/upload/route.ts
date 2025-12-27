@@ -41,8 +41,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create directory if needed
-    const dir = path.join(process.cwd(), 'public/uploads/tables', tableId);
+    // Create directory if needed (outside public/ for runtime uploads)
+    const dir = path.join(process.cwd(), 'uploads/tables', tableId);
     await mkdir(dir, { recursive: true });
 
     // Generate unique filename
@@ -54,10 +54,10 @@ export async function POST(request: Request) {
     const bytes = await file.arrayBuffer();
     await writeFile(filepath, Buffer.from(bytes));
 
-    // Return URL path (relative to public folder)
+    // Return URL path (served via API route)
     return NextResponse.json({
       success: true,
-      url: `/uploads/tables/${tableId}/${filename}`,
+      url: `/api/uploads/tables/${tableId}/${filename}`,
     });
   } catch (error) {
     console.error('Failed to upload file:', error);

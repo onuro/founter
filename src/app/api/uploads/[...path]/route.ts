@@ -1,0 +1,50 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { readFile, stat } from 'fs/promises';
+import path from 'path';
+
+const MIME_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+};
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ path: string[] }> }
+) {
+  try {
+    const { path: pathSegments } = await params;
+    const filePath = path.join(process.cwd(), 'uploads', ...pathSegments);
+
+    // Security: Prevent directory traversal
+    const uploadsDir = path.join(process.cwd(), 'uploads');
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(uploadsDir)) {
+      return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
+    }
+
+    // Check if file exists
+    try {
+      await stat(resolvedPath);
+    } catch {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    }
+
+    // Read file
+    const fileBuffer = await readFile(resolvedPath);
+    const ext = path.extname(resolvedPath).slice(1).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+    return new NextResponse(fileBuffer, {
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': 'public, max-age=31536000, immutable',
+      },
+    });
+  } catch (error) {
+    console.error('Error serving file:', error);
+    return NextResponse.json({ error: 'Failed to serve file' }, { status: 500 });
+  }
+}
