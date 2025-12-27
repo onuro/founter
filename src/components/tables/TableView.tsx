@@ -212,7 +212,7 @@ export function TableView({
       </div>
 
       {/* Footer with row count and add button */}
-      <div className="border-t border-border p-3 flex items-center justify-between">
+      <div className="border-t bg-surface border-border p-3 flex items-center justify-between">
         <span className="text-sm text-muted-foreground">
           {rows.length.toLocaleString()} of {displayTotal.toLocaleString()} rows
         </span>
