@@ -200,7 +200,7 @@ export function RowDetailSheet({
         </div>
 
         {/* Actions */}
-        <div className="shrink-0 flex items-center justify-between pt-4 border-t border-border">
+        <div className="shrink-0 flex items-center justify-between p-4 border-t border-border">
           {!isNew && onDelete ? (
             <Button
               variant="ghost"

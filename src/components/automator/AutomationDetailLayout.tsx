@@ -33,15 +33,14 @@ function RunRow({ run }: { run: AutomationRun }) {
       >
         <div className="flex items-center gap-4">
           <span
-            className={`w-2 h-2 rounded-full ${
-              run.status === 'completed'
-                ? 'bg-green-500'
-                : run.status === 'failed'
-                  ? 'bg-red-500'
-                  : run.status === 'running'
-                    ? 'bg-yellow-500 animate-pulse'
-                    : 'bg-gray-500'
-            }`}
+            className={`w-2 h-2 rounded-full ${run.status === 'completed'
+              ? 'bg-green-500'
+              : run.status === 'failed'
+                ? 'bg-red-500'
+                : run.status === 'running'
+                  ? 'bg-yellow-500 animate-pulse'
+                  : 'bg-gray-500'
+              }`}
           />
           <span className="text-sm">
             {new Date(run.startedAt).toLocaleString()}
@@ -57,13 +56,12 @@ function RunRow({ run }: { run: AutomationRun }) {
             </span>
           )}
           <span
-            className={`text-sm font-medium ${
-              run.status === 'completed'
-                ? 'text-green-500'
-                : run.status === 'failed'
-                  ? 'text-red-500'
-                  : 'text-muted-foreground'
-            }`}
+            className={`text-sm font-medium ${run.status === 'completed'
+              ? 'text-green-500'
+              : run.status === 'failed'
+                ? 'text-red-500'
+                : 'text-muted-foreground'
+              }`}
           >
             {run.status}
           </span>
@@ -89,13 +87,12 @@ function RunRow({ run }: { run: AutomationRun }) {
                 >
                   <div className="flex items-center gap-2">
                     <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        step.status === 'success'
-                          ? 'bg-green-500'
-                          : step.status === 'failed'
-                            ? 'bg-red-500'
-                            : 'bg-gray-500'
-                      }`}
+                      className={`w-1.5 h-1.5 rounded-full ${step.status === 'success'
+                        ? 'bg-green-500'
+                        : step.status === 'failed'
+                          ? 'bg-red-500'
+                          : 'bg-gray-500'
+                        }`}
                     />
                     <span>{step.name}</span>
                   </div>
@@ -227,7 +224,7 @@ export function AutomationDetailLayout({
   }
 
   return (
-    <div className="p-6 pl-4 pr-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 pl-4 pr-6 w-full mx-auto space-y-6">
       {/* Back link */}
       <Button variant="ghost" asChild className="gap-2">
         <Link href="/automator">
@@ -236,156 +233,162 @@ export function AutomationDetailLayout({
         </Link>
       </Button>
 
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Sparkles className="w-5 h-5 text-primary" />
+      {/* Two-column layout */}
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_0.5fr] gap-6 md:items-stretch">
+        {/* Left column - Header, Webhook, Config */}
+        <div className="space-y-6">
+          {/* Header */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between w-full">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle>{automation.name}</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {typeInfo?.label || automation.type}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="enabled" className="text-sm pb-0">
+                      {automation.enabled ? 'Enabled' : 'Disabled'}
+                    </Label>
+                    <Switch
+                      id="enabled"
+                      checked={automation.enabled}
+                      onCheckedChange={handleToggle}
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
-              <div>
-                <CardTitle>{automation.name}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {typeInfo?.label || automation.type}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
+            </CardHeader>
+          </Card>
+
+          {/* Webhook URL */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Webhook URL</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-2">
+                Add this URL as a webhook in Baserow for "row.created" events.
+              </p>
               <div className="flex items-center gap-2">
-                <Label htmlFor="enabled" className="text-sm">
-                  {automation.enabled ? 'Enabled' : 'Disabled'}
-                </Label>
-                <Switch
-                  id="enabled"
-                  checked={automation.enabled}
-                  onCheckedChange={handleToggle}
+                <Input
+                  value={webhookUrl}
+                  readOnly
+                  className="font-mono text-sm"
                 />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="text-destructive hover:text-destructive"
-              >
-                {isDeleting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Trash2 className="w-4 h-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Webhook URL */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Webhook URL</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground mb-2">
-            Add this URL as a webhook in Baserow for "row.created" events.
-          </p>
-          <div className="flex items-center gap-2">
-            <Input
-              value={webhookUrl}
-              readOnly
-              className="font-mono text-sm"
-            />
-            <Button variant="secondary" size="icon" onClick={copyWebhookUrl}>
-              {copied ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Configuration */}
-      {config && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Configuration</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-muted-foreground">Baserow Table ID</p>
-                <p className="font-medium">{config.baserow.tableId}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">URL Field</p>
-                <p className="font-medium">{config.baserow.urlField}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Short Description Field</p>
-                <p className="font-medium">{config.baserow.shortDescField}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">Long Description Field</p>
-                <p className="font-medium">{config.baserow.longDescField}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">AI Provider</p>
-                <p className="font-medium">
-                  {aiProviderInfo?.label || config.ai.provider}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground">AI Model</p>
-                <p className="font-medium">{config.ai.model || 'Default'}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Run History */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base">Run History</CardTitle>
-            <div className="flex items-center gap-1">
-              {runs.length > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearRuns}
-                  disabled={isClearing}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  {isClearing ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                <Button variant="secondary" size="icon" onClick={copyWebhookUrl}>
+                  {copied ? (
+                    <Check className="w-4 h-4" />
                   ) : (
-                    <Trash2 className="w-4 h-4" />
+                    <Copy className="w-4 h-4" />
                   )}
                 </Button>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => refetchRuns()}>
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {runs.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">No runs yet</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {runs.map((run) => (
-                <RunRow key={run.id} run={run} />
-              ))}
-            </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Configuration */}
+          {config && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-1.5">
+                    <p className="text-muted-foreground">Baserow Table ID</p>
+                    <p className="font-medium">{config.baserow.tableId}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-muted-foreground">URL Field</p>
+                    <p className="font-medium">{config.baserow.urlField}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-muted-foreground">Short Description Field</p>
+                    <p className="font-medium">{config.baserow.shortDescField}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-muted-foreground">Long Description Field</p>
+                    <p className="font-medium">{config.baserow.longDescField}</p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-muted-foreground">AI Provider</p>
+                    <p className="font-medium">
+                      {aiProviderInfo?.label || config.ai.provider}
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-muted-foreground">AI Model</p>
+                    <p className="font-medium">{config.ai.model || 'Default'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Right column - Run History (stretches to match left column height) */}
+        <Card className="flex flex-col h-full">
+          <CardHeader className="flex-shrink-0">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Run History</CardTitle>
+              <div className="flex items-center gap-1">
+                {runs.length > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearRuns}
+                    disabled={isClearing}
+                    className="text-muted-foreground hover:text-destructive"
+                  >
+                    {isClearing ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" onClick={() => refetchRuns()}>
+                  <RefreshCw className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 flex-1 min-h-0 overflow-hidden">
+            {runs.length === 0 ? (
+              <div className="py-8 text-center">
+                <p className="text-sm text-muted-foreground">No runs yet</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-border overflow-y-auto h-full">
+                {runs.map((run) => (
+                  <RunRow key={run.id} run={run} />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

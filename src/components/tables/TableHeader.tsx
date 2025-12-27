@@ -90,14 +90,6 @@ function SortableHeaderCell({
         isDragging && 'opacity-50 z-20'
       )}
     >
-      {/* Drag handle */}
-      <button
-        className="shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground mr-1"
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="w-3.5 h-3.5" />
-      </button>
 
       {/* Field info */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -109,6 +101,15 @@ function SortableHeaderCell({
           <span className="text-primary text-xs">*</span>
         )}
       </div>
+
+      {/* Drag handle */}
+      <button
+        className="shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground mr-1"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </button>
 
       {/* Actions dropdown */}
       <DropdownMenu>
