@@ -91,14 +91,17 @@ model Row {
 // ==========================================
 
 model ImageFetcherSaved {
-  id         String                   @id @default(cuid())
-  url        String
-  label      String
-  images     ImageFetcherSavedImage[]
-  imageCount Int
-  options    Json?
-  createdAt  DateTime                 @default(now())
-  updatedAt  DateTime                 @updatedAt
+  id              String                   @id @default(cuid())
+  url             String
+  label           String
+  images          ImageFetcherSavedImage[]
+  imageCount      Int
+  options         Json?
+  status          String                   @default("downloading") // "downloading" | "complete" | "failed"
+  downloadedCount Int                      @default(0)
+  failedCount     Int                      @default(0)
+  createdAt       DateTime                 @default(now())
+  updatedAt       DateTime                 @updatedAt
 
   @@index([createdAt])
 }

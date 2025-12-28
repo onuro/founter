@@ -9,7 +9,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Save, Trash2, Loader2, ImageIcon } from 'lucide-react';
+import { ArrowDownToDot, Trash2, Loader2, ImageIcon } from 'lucide-react';
 import type { ImageFetcherSaved } from '@/hooks/useImageFetcherSaved';
 
 interface SavedFetchesSheetProps {
@@ -97,7 +97,7 @@ export function SavedFetchesSheet({
             </div>
           ) : saved.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-32 text-center text-muted-foreground">
-              <Save className="w-8 h-8 mb-2 opacity-50" />
+              <ArrowDownToDot className="w-8 h-8 mb-2 opacity-50" />
               <p className="text-sm">No saved fetches yet</p>
             </div>
           ) : (

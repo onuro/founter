@@ -15,7 +15,7 @@ import { useImageFetcherSaved } from '@/hooks/useImageFetcherSaved';
 import { HistorySheet } from '@/components/ui/history-sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, History, Settings, ImageIcon, FileText, Save } from 'lucide-react';
+import { Loader2, History, Settings, ImageIcon, FileText, ArrowDownToDot } from 'lucide-react';
 import { ScrollOptions, DEFAULT_SCROLL_OPTIONS, CrawlPhase } from '@/types/crawl';
 import { toast } from 'sonner';
 import type { SitePreset, GridOptions } from '@/types/preset';
@@ -56,6 +56,7 @@ export function FetcherLayout() {
   const {
     saved,
     isLoading: savedLoading,
+    saveProgress,
     save: saveImages,
     remove: removeSaved,
     getSavedWithImages,
@@ -204,7 +205,7 @@ export function FetcherLayout() {
                 title="Saved fetches"
                 className="cursor-pointer"
               >
-                <Save className="w-4 h-4" />
+                <ArrowDownToDot className="w-4 h-4" />
               </Button>
               <Button
                 variant="secondary"
@@ -364,6 +365,7 @@ export function FetcherLayout() {
         imageCount={images.length}
         url={crawledUrl || ''}
         onSave={handleSave}
+        saveProgress={saveProgress}
       />
     </div>
   );

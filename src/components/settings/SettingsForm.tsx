@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Save, Eye, EyeOff, Database, Brain, Camera } from 'lucide-react';
+import { Loader2, ArrowDownToDot, Eye, EyeOff, Database, Brain, Camera } from 'lucide-react';
 
 export function SettingsForm() {
   const {
@@ -375,7 +375,7 @@ export function SettingsForm() {
           </>
         ) : (
           <>
-            <Save className="w-4 h-4" />
+            <ArrowDownToDot className="w-4 h-4" />
             Save Settings
           </>
         )}

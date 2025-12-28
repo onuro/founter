@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbox, useLightbox } from '@/components/ui/lightbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Copy, Check, ExternalLink, ImageIcon, LayoutGrid, Link2, Save } from 'lucide-react';
+import { Copy, Check, ExternalLink, ImageIcon, LayoutGrid, Link2, ArrowDownToDot } from 'lucide-react';
 import {
   COLUMN_OPTIONS,
   GAP_OPTIONS,
@@ -104,7 +104,7 @@ export function ImageGrid({ images, crawledUrl, gridOptions, onSave }: ImageGrid
             <div className="flex items-center gap-2">
               {onSave && (
                 <Button variant="outline" size="sm" className="cursor-pointer gap-2" onClick={onSave}>
-                  <Save className="w-4 h-4" />
+                  <ArrowDownToDot className="w-4 h-4" />
                   <span className="hidden sm:inline">Save</span>
                 </Button>
               )}

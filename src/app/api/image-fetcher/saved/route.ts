@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@/generated/prisma';
-import { downloadImages } from '@/lib/image-fetcher/download';
+import { downloadImagesInBatches } from '@/lib/image-fetcher/download';
 import type { ExtractedImage } from '@/types/crawl';
 
 export async function GET() {
@@ -22,6 +22,9 @@ export async function GET() {
         url: item.url,
         label: item.label,
         imageCount: item.imageCount,
+        status: item.status,
+        downloadedCount: item.downloadedCount,
+        failedCount: item.failedCount,
         options: item.options,
         createdAt: item.createdAt,
         updatedAt: item.updatedAt,
@@ -33,6 +36,64 @@ export async function GET() {
       { success: false, error: 'Failed to fetch saved items' },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Background download function - runs after response is sent
+ */
+async function downloadImagesInBackground(
+  savedId: string,
+  images: ExtractedImage[]
+): Promise<void> {
+  try {
+    const downloadedImages = await downloadImagesInBatches(
+      images,
+      savedId,
+      async (progress) => {
+        // Update progress in database
+        await prisma.imageFetcherSaved.update({
+          where: { id: savedId },
+          data: {
+            downloadedCount: progress.downloaded,
+            failedCount: progress.failed,
+          },
+        });
+      }
+    );
+
+    // Final update: mark as complete and create image records
+    await prisma.$transaction([
+      prisma.imageFetcherSaved.update({
+        where: { id: savedId },
+        data: {
+          status: 'complete',
+          imageCount: downloadedImages.length,
+          downloadedCount: downloadedImages.length,
+        },
+      }),
+      prisma.imageFetcherSavedImage.createMany({
+        data: downloadedImages.map((img) => ({
+          savedId: savedId,
+          originalUrl: img.originalUrl,
+          localPath: img.localPath,
+          filename: img.filename,
+          width: img.width,
+          alt: img.alt,
+          link: img.link,
+        })),
+      }),
+    ]);
+
+    console.log(`Background download complete for ${savedId}: ${downloadedImages.length} images`);
+  } catch (error) {
+    console.error(`Background download failed for ${savedId}:`, error);
+
+    // Mark as failed
+    await prisma.imageFetcherSaved.update({
+      where: { id: savedId },
+      data: { status: 'failed' },
+    }).catch(console.error);
   }
 }
 
@@ -66,45 +127,36 @@ export async function POST(request: Request) {
       );
     }
 
-    // Create the saved record first to get the ID
+    // Create the saved record with "downloading" status
     const saved = await prisma.imageFetcherSaved.create({
       data: {
         label: label.trim(),
         url: url.trim(),
         imageCount: images.length,
+        status: 'downloading',
+        downloadedCount: 0,
+        failedCount: 0,
         options: options ?? Prisma.JsonNull,
       },
     });
 
-    // Download images to filesystem
-    const downloadedImages = await downloadImages(images, saved.id);
+    // Start background download (don't await - fire and forget)
+    // Using setImmediate/setTimeout to ensure response is sent first
+    setImmediate(() => {
+      downloadImagesInBackground(saved.id, images);
+    });
 
-    // Update with actual downloaded count and create image records
-    await prisma.$transaction([
-      prisma.imageFetcherSaved.update({
-        where: { id: saved.id },
-        data: { imageCount: downloadedImages.length },
-      }),
-      prisma.imageFetcherSavedImage.createMany({
-        data: downloadedImages.map((img) => ({
-          savedId: saved.id,
-          originalUrl: img.originalUrl,
-          localPath: img.localPath,
-          filename: img.filename,
-          width: img.width,
-          alt: img.alt,
-          link: img.link,
-        })),
-      }),
-    ]);
-
+    // Return immediately with the saved ID
     return NextResponse.json({
       success: true,
       data: {
         id: saved.id,
         label: saved.label,
         url: saved.url,
-        imageCount: downloadedImages.length,
+        imageCount: images.length,
+        status: 'downloading',
+        downloadedCount: 0,
+        failedCount: 0,
         createdAt: saved.createdAt,
       },
     });

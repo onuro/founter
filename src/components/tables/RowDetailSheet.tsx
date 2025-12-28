@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Trash2, Save } from 'lucide-react';
+import { Trash2, ArrowDownToDot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Form } from '@/components/ui/form';
 import {
@@ -230,7 +230,7 @@ export function RowDetailSheet({
                   Cancel
                 </Button>
                 <Button type="submit" size="sm" disabled={isSaving}>
-                  <Save className="w-4 h-4 mr-1" />
+                  <ArrowDownToDot className="w-4 h-4 mr-1" />
                   {isSaving ? 'Saving...' : 'Save'}
                 </Button>
               </div>
