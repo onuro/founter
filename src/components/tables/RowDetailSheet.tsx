@@ -219,7 +219,7 @@ export function RowDetailSheet({
               ) : (
                 <div />
               )}
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <Button
                   type="button"
                   variant="ghost"
@@ -229,8 +229,8 @@ export function RowDetailSheet({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" size="sm" disabled={isSaving}>
-                  <ArrowDownToDot className="w-4 h-4 mr-1" />
+                <Button type="submit" className="min-w-32" disabled={isSaving}>
+                  <ArrowDownToDot className="size-4" />
                   {isSaving ? 'Saving...' : 'Save'}
                 </Button>
               </div>

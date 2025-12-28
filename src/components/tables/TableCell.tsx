@@ -4,7 +4,7 @@ import { memo, useState } from 'react';
 import { Check, ExternalLink, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Field, FieldType, SelectFieldOptions, SelectChoice, RowHeight } from '@/types/tables';
-import { TAG_COLORS, ROW_HEIGHT_CONFIG } from '@/types/tables';
+import { TAG_COLORS, TAG_BORING_STYLE, ROW_HEIGHT_CONFIG } from '@/types/tables';
 import { Lightbox } from '@/components/ui/lightbox';
 
 interface TableCellProps {
@@ -26,6 +26,7 @@ function renderSelectValue(
   if (!value) return null;
 
   const choices = options?.choices || [];
+  const boringMode = options?.boringMode ?? false;
   const valueArray = Array.isArray(value) ? value : [value];
   const config = ROW_HEIGHT_CONFIG[rowHeight];
 
@@ -54,7 +55,7 @@ function renderSelectValue(
           );
         }
 
-        const color = getTagColor(choice.color);
+        const color = boringMode ? TAG_BORING_STYLE : getTagColor(choice.color);
         return (
           <span
             key={idx}

@@ -24,8 +24,9 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { FieldType, CreateFieldInput, Field, SelectFieldOptions, SelectChoice } from '@/types/tables';
-import { FIELD_TYPE_CONFIG, TAG_COLORS } from '@/types/tables';
+import { FIELD_TYPE_CONFIG, TAG_COLORS, TAG_BORING_STYLE } from '@/types/tables';
 import { FieldTypeIcon } from './FieldTypeIcon';
+import { X } from 'lucide-react';
 
 interface AddFieldDialogProps {
   open: boolean;
@@ -62,6 +63,7 @@ export function AddFieldDialog({
   const [choices, setChoices] = useState<{ id: string; label: string; color: string }[]>([]);
   const [newChoiceLabel, setNewChoiceLabel] = useState('');
   const [allowMultiple, setAllowMultiple] = useState(true);
+  const [boringMode, setBoringMode] = useState(false);
 
   // Track original choices for detecting removed options
   const [originalChoices, setOriginalChoices] = useState<SelectChoice[]>([]);
@@ -88,6 +90,7 @@ export function AddFieldDialog({
         setChoices(existingChoices);
         setOriginalChoices(existingChoices); // Store original for comparison
         setAllowMultiple(selectOptions?.allowMultiple ?? true);
+        setBoringMode(selectOptions?.boringMode ?? false);
       } else {
         // Reset form for new field
         setName('');
@@ -96,6 +99,7 @@ export function AddFieldDialog({
         setChoices([]);
         setOriginalChoices([]);
         setAllowMultiple(true);
+        setBoringMode(false);
       }
       setNewChoiceLabel('');
       // Reset confirmation state
@@ -145,7 +149,7 @@ export function AddFieldDialog({
 
       // Add options based on type
       if (type === 'select') {
-        input.options = { choices, allowMultiple };
+        input.options = { choices, allowMultiple, boringMode };
       }
 
       // Check if we're editing and have removed any choices
@@ -207,160 +211,167 @@ export function AddFieldDialog({
   };
 
   return (
-  <>
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px]">
-        <DialogHeader>
-          <DialogTitle>
-            {isEditing ? 'Edit Field' : 'Add Field'}
-          </DialogTitle>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle>
+              {isEditing ? 'Edit Field' : 'Add Field'}
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Field Name */}
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Field Name
-            </Label>
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="e.g., Title, Status, Due Date"
-              className="bg-secondary"
-              autoFocus
-            />
-          </div>
-
-          {/* Field Type */}
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Field Type
-            </Label>
-            <div className="grid grid-cols-4 gap-2">
-              {FIELD_TYPES.map((fieldType) => {
-                const config = FIELD_TYPE_CONFIG[fieldType];
-                return (
-                  <button
-                    key={fieldType}
-                    onClick={() => setType(fieldType)}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 p-3 rounded-md border transition-colors',
-                      type === fieldType
-                        ? 'border-primary bg-primary/10'
-                        : 'border-border hover:border-neutral-600 bg-secondary/50'
-                    )}
-                  >
-                    <FieldTypeIcon type={fieldType} size="md" />
-                    <span className="text-xs">{config.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Select Options */}
-          {type === 'select' && (
-            <div className="space-y-3">
+          <div className="space-y-6 py-4">
+            {/* Field Name */}
+            <div className="space-y-2">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Options
+                Field Name
               </Label>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g., Title, Status, Due Date"
+                className="bg-secondary"
+                autoFocus
+              />
+            </div>
 
-              {/* Existing choices */}
-              <div className="space-y-2">
-                {choices.map((choice) => {
-                  const color = TAG_COLORS.find((c) => c.name === choice.color) || TAG_COLORS[0];
+            {/* Field Type */}
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Field Type
+              </Label>
+              <div className="grid grid-cols-4 gap-2">
+                {FIELD_TYPES.map((fieldType) => {
+                  const config = FIELD_TYPE_CONFIG[fieldType];
                   return (
-                    <div
-                      key={choice.id}
-                      className="flex items-center justify-between gap-2 p-2 rounded bg-neutral-800/50"
+                    <button
+                      key={fieldType}
+                      onClick={() => setType(fieldType)}
+                      className={cn(
+                        'flex flex-col items-center gap-1.5 p-3 rounded-md border transition-colors',
+                        type === fieldType
+                          ? 'border-primary bg-primary/10'
+                          : 'border-border hover:border-neutral-600 bg-secondary/50'
+                      )}
                     >
-                      <span className={cn('px-2 py-0.5 rounded text-xs', color.bg, color.text)}>
-                        {choice.label}
-                      </span>
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        onClick={() => removeChoice(choice.id)}
-                        className="h-6 w-6"
-                      >
-                        &times;
-                      </Button>
-                    </div>
+                      <FieldTypeIcon type={fieldType} size="md" />
+                      <span className="text-xs">{config.label}</span>
+                    </button>
                   );
                 })}
               </div>
-
-              {/* Add new choice */}
-              <div className="flex gap-2">
-                <Input
-                  value={newChoiceLabel}
-                  onChange={(e) => setNewChoiceLabel(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      addChoice();
-                    }
-                  }}
-                  placeholder="Add option..."
-                  className="bg-secondary flex-1"
-                />
-                <Button variant="secondary" size="sm" onClick={addChoice}>
-                  Add
-                </Button>
-              </div>
-
-              {/* Allow multiple */}
-              <div className="flex items-center justify-between pt-2">
-                <Label className="text-sm text-muted-foreground">Allow multiple selections</Label>
-                <Switch checked={allowMultiple} onCheckedChange={setAllowMultiple} />
-              </div>
             </div>
-          )}
 
-          {/* Required */}
-          <div className="flex items-center justify-between">
-            <Label className="text-sm text-muted-foreground">Required field</Label>
-            <Switch checked={required} onCheckedChange={setRequired} />
+            {/* Select Options */}
+            {type === 'select' && (
+              <div className="space-y-3">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Options
+                </Label>
+
+                {/* Existing choices */}
+                <div className="space-y-2">
+                  {choices.map((choice) => {
+                    const color = boringMode
+                      ? TAG_BORING_STYLE
+                      : TAG_COLORS.find((c) => c.name === choice.color) || TAG_COLORS[0];
+                    return (
+                      <div
+                        key={choice.id}
+                        className="flex items-center justify-between gap-2"
+                      >
+                        <span className={cn('px-2 py-0.5 rounded text-sm', color.bg, color.text)}>
+                          {choice.label}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          onClick={() => removeChoice(choice.id)}
+                        >
+                          <X />
+                        </Button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Add new choice */}
+                <div className="flex gap-2">
+                  <Input
+                    value={newChoiceLabel}
+                    onChange={(e) => setNewChoiceLabel(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addChoice();
+                      }
+                    }}
+                    placeholder="Add option..."
+                    className="bg-secondary flex-1"
+                  />
+                  <Button variant="secondary" size="sm" onClick={addChoice}>
+                    Add
+                  </Button>
+                </div>
+
+                {/* Allow multiple */}
+                <div className="flex items-center justify-between pt-2">
+                  <Label className="text-sm text-muted-foreground">Allow multiple selections</Label>
+                  <Switch checked={allowMultiple} onCheckedChange={setAllowMultiple} />
+                </div>
+
+                {/* Boring mode */}
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-muted-foreground">Boring mode (monochrome tags)</Label>
+                  <Switch checked={boringMode} onCheckedChange={setBoringMode} />
+                </div>
+              </div>
+            )}
+
+            {/* Required */}
+            <div className="flex items-center justify-between">
+              <Label className="text-sm text-muted-foreground">Required field</Label>
+              <Switch checked={required} onCheckedChange={setRequired} />
+            </div>
           </div>
-        </div>
 
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!name.trim() || isSubmitting}
-          >
-            {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Field'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!name.trim() || isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Add Field'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-    {/* Confirmation dialog for removing options in use */}
-    <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Remove options in use?</AlertDialogTitle>
-          <AlertDialogDescription>
-            {affectedRowCount} {affectedRowCount === 1 ? 'row has a value' : 'rows have values'} that will be removed.
-            This action cannot be undone.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancelRemoval}>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleConfirmRemoval}>
-            Remove
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  </>
+      {/* Confirmation dialog for removing options in use */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove options in use?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {affectedRowCount} {affectedRowCount === 1 ? 'row has a value' : 'rows have values'} that will be removed.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelRemoval}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmRemoval}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

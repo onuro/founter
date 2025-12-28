@@ -19,7 +19,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import type { Field, SelectFieldOptions, SelectChoice } from '@/types/tables';
-import { TAG_COLORS } from '@/types/tables';
+import { TAG_COLORS, TAG_BORING_STYLE } from '@/types/tables';
 
 interface SelectInputProps {
   field: Field;
@@ -37,6 +37,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
   const options = field.options as SelectFieldOptions | null;
   const choices = options?.choices || [];
   const allowMultiple = options?.allowMultiple ?? true;
+  const boringMode = options?.boringMode ?? false;
 
   const selectedValues = Array.isArray(value) ? value : value ? [value] : [];
 
@@ -72,7 +73,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
             variant="inputlike"
             role="combobox"
             aria-expanded={isOpen}
-            className="w-full justify-between h-auto min-h-10 px-3 py-2 font-normal"
+            className="w-full justify-between h-auto min-h-10 pl-4 has-[span.inline-flex]:pl-2 py-2 font-normal"
           >
             <div className="flex flex-wrap items-center gap-1 pr-2">
               {selectedValues.length > 0 ? (
@@ -94,7 +95,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
                     );
                   }
 
-                  const color = getTagColor(choice.color);
+                  const color = boringMode ? TAG_BORING_STYLE : getTagColor(choice.color);
                   return (
                     <span
                       key={v}
@@ -128,7 +129,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
             <ChevronsUpDown className="size-4 shrink-0 text-muted-foreground/80" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[--radix-popper-anchor-width] p-0" align="start">
+        <PopoverContent className="w-[--radix-popper-anchor-width] min-w-xs p-0" align="start">
           <Command>
             <CommandInput placeholder="Search options..." />
             <CommandList>
@@ -136,7 +137,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
               <CommandGroup>
                 {choices.map((choice: SelectChoice) => {
                   const isSelected = selectedValues.includes(choice.id);
-                  const color = getTagColor(choice.color);
+                  const color = boringMode ? TAG_BORING_STYLE : getTagColor(choice.color);
                   return (
                     <CommandItem
                       key={choice.id}
@@ -144,7 +145,7 @@ export function SelectInput({ field, value, onChange }: SelectInputProps) {
                       onSelect={() => toggleChoice(choice.id)}
                       className="flex items-center gap-2"
                     >
-                      <span className={cn('px-2 py-0.5 rounded text-xs font-medium', color.bg, color.text)}>
+                      <span className={cn('px-2 py-0.5 rounded text-sm font-medium', color.bg, color.text)}>
                         {choice.label}
                       </span>
                       {isSelected && <Check className="size-4 ml-auto" />}

@@ -36,14 +36,14 @@ function AutomationCard({
 
   return (
     <Card
-      className="hover:bg-surface/50 transition-colors cursor-pointer"
+      className="bg-surface/50 hover:bg-surface transition-colors cursor-pointer"
       onClick={handleCardClick}
     >
       <CardContent>
         <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Sparkles className="w-5 h-5 text-primary" />
+          <div className="flex items-start gap-4 flex-1 min-w-0">
+            <div className="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center flex-shrink-0">
+              <Sparkles className="size-5 text-neutral-200" />
             </div>
             <div className="flex-1 min-w-0">
               <span className="font-medium block truncate">

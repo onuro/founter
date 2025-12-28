@@ -180,20 +180,20 @@ export function Lightbox({
         {showHeader && (
           <DialogHeader className="flex-shrink-0">
             <DialogTitle className="pr-8 flex items-center justify-between">
-              {showTitle && <span className="line-clamp-1">{displayTitle}</span>}
+              {showTitle && <span className="line-clamp-1 pr-12">{displayTitle}</span>}
               {!showTitle && <span />}
               {showFullscreenToggle && (
                 <Button
                   size="icon-sm"
                   variant="ghost"
-                  className="cursor-pointer ml-2"
+                  className="cursor-pointer ml-2 absolute top-2.5 right-12"
                   onClick={() => setIsFullscreen(!isFullscreen)}
                   title={isFullscreen ? 'Exit fullscreen' : 'View fullscreen'}
                 >
                   {isFullscreen ? (
-                    <Minimize2 className="w-4 h-4" />
+                    <Minimize2 className="size-5" />
                   ) : (
-                    <Maximize2 className="w-4 h-4" />
+                    <Maximize2 className="size-4.5" />
                   )}
                 </Button>
               )}

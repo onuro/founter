@@ -20,6 +20,7 @@ export interface SelectChoice {
 export interface SelectFieldOptions {
   choices: SelectChoice[];
   allowMultiple: boolean;
+  boringMode?: boolean; // When true, show monochrome tags instead of colors
 }
 
 export interface NumberFieldOptions {
@@ -175,8 +176,8 @@ export const FIELD_TYPE_CONFIG: Record<FieldType, {
 export const TAG_COLORS = [
   {
     name: 'red',
-    bg: 'bg-red-900/20',
-    text: '[color:color-mix(in_oklch,theme(colors.red.600),white_30%)]',
+    bg: 'bg-[color:color-mix(in_oklch,theme(colors.red.800),gray_20%)]/20',
+    text: '[color:color-mix(in_oklch,theme(colors.red.700),white_30%)]',
     border: 'border-red-500/30',
   },
   {
@@ -222,6 +223,13 @@ export const TAG_COLORS = [
     border: 'border-cyan-500/30',
   },
 ];
+
+// Boring mode style for monochrome tags
+export const TAG_BORING_STYLE = {
+  bg: 'bg-neutral-900',
+  text: 'text-neutral-300',
+  border: 'border-neutral-700',
+};
 
 // Row height presets for table view
 export type RowHeight = 'small' | 'medium' | 'large';

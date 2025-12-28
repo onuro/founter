@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Expand } from 'lucide-react';
+import { X, Expand, Maximize2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -86,7 +86,7 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
             className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
             onClick={() => setIsLightboxOpen(true)}
           >
-            <Expand className="w-8 h-8 text-white" />
+            <Maximize2 className="size-6 text-white" />
           </div>
           <Button
             type="button"
