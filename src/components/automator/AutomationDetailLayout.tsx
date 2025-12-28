@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAutomation } from '@/hooks/useAutomation';
@@ -17,6 +17,7 @@ import {
   Check,
   RefreshCw,
   Trash2,
+  Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { AUTOMATION_TYPES, AI_PROVIDERS } from '@/types/automator';
@@ -97,7 +98,7 @@ function RunRow({ run }: { run: AutomationRun }) {
                     <span>{step.name}</span>
                   </div>
                   <div className="flex items-center gap-4 text-muted-foreground">
-                    <span>{step.duration}ms</span>
+                    <span>{(step.duration / 1000).toFixed(1)}s</span>
                     {step.error && (
                       <span className="text-destructive text-xs">
                         {step.error}
@@ -134,6 +135,19 @@ export function AutomationDetailLayout({
   const [copied, setCopied] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isClearing, setIsClearing] = useState(false);
+
+  // Auto-poll when a run is in progress
+  const hasRunningRun = runs.some(run => run.status === 'running');
+
+  useEffect(() => {
+    if (!hasRunningRun) return;
+
+    const interval = setInterval(() => {
+      refetchRuns();
+    }, 1000); // Poll every 1 second for faster live updates
+
+    return () => clearInterval(interval);
+  }, [hasRunningRun, refetchRuns]);
 
   const config = automation?.config as ResourceEnricherConfig | undefined;
   const typeInfo = automation ? AUTOMATION_TYPES[automation.type] : null;
@@ -266,6 +280,15 @@ export function AutomationDetailLayout({
                   <Button
                     variant="ghost"
                     size="icon"
+                    asChild
+                  >
+                    <Link href={`/automator/${automationId}/edit`}>
+                      <Pencil className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={handleDelete}
                     disabled={isDeleting}
                     className="text-destructive hover:text-destructive"
@@ -342,6 +365,29 @@ export function AutomationDetailLayout({
                     <p className="font-medium">{config.ai.model || 'Default'}</p>
                   </div>
                 </div>
+
+                {/* Image Fields Config */}
+                {config.baserow.enableImageFields && (
+                  <div className="pt-4 mt-4 border-t border-border">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+                      Screenshot Capture
+                    </p>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-1.5">
+                        <p className="text-muted-foreground">PNG Field</p>
+                        <p className="font-medium">
+                          {config.baserow.pngField || 'Not configured'}
+                        </p>
+                      </div>
+                      <div className="space-y-1.5">
+                        <p className="text-muted-foreground">WebP Field</p>
+                        <p className="font-medium">
+                          {config.baserow.webpField || 'Not configured'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

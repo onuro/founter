@@ -211,6 +211,50 @@ export class BaserowClient {
       throw new Error('Failed to delete row');
     }
   }
+
+  /**
+   * Upload a file to Baserow's file storage
+   * Returns the file info needed to attach to a row
+   */
+  async uploadFile(
+    fileBuffer: Buffer,
+    filename: string,
+    mimeType: string = 'image/png'
+  ): Promise<{ name: string; url: string }> {
+    if (!this.token) {
+      throw new Error('Not authenticated. Call login() or setToken() first.');
+    }
+
+    // Create multipart form data manually
+    const boundary = '----BaserowFormBoundary' + Date.now();
+    const header = Buffer.from(
+      `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="file"; filename="${filename}"\r\n` +
+        `Content-Type: ${mimeType}\r\n\r\n`
+    );
+    const footer = Buffer.from(`\r\n--${boundary}--\r\n`);
+    const multipartBody = Buffer.concat([header, fileBuffer, footer]);
+
+    const response = await fetch(`${this.host}/api/user-files/upload-file/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `JWT ${this.token}`,
+        'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      },
+      body: multipartBody,
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || error.detail || 'Failed to upload file');
+    }
+
+    const data = await response.json();
+    return {
+      name: data.name,
+      url: data.url,
+    };
+  }
 }
 
 /**

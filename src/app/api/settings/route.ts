@@ -36,6 +36,8 @@ export async function GET() {
         glmKeyDescription: settings.glmKeyDescription || '',
         deepseekKey: settings.deepseekKey ? maskKey(settings.deepseekKey) : '',
         deepseekKeyDescription: settings.deepseekKeyDescription || '',
+        holyshotToken: settings.holyshotToken ? maskKey(settings.holyshotToken) : '',
+        holyshotTokenDescription: settings.holyshotTokenDescription || '',
       },
     });
   } catch (error) {
@@ -64,6 +66,8 @@ export async function PUT(request: Request) {
       glmKeyDescription,
       deepseekKey,
       deepseekKeyDescription,
+      holyshotToken,
+      holyshotTokenDescription,
     } = body;
 
     // Build update data - only update fields that are provided and not masked
@@ -87,6 +91,9 @@ export async function PUT(request: Request) {
     }
     if (deepseekKey !== undefined && !deepseekKey.startsWith('••••')) {
       updateData.deepseekKey = deepseekKey || null;
+    }
+    if (holyshotToken !== undefined && !holyshotToken.startsWith('••••')) {
+      updateData.holyshotToken = holyshotToken || null;
     }
 
     // Non-sensitive fields - always update if provided
@@ -112,6 +119,9 @@ export async function PUT(request: Request) {
     }
     if (deepseekKeyDescription !== undefined) {
       updateData.deepseekKeyDescription = deepseekKeyDescription || null;
+    }
+    if (holyshotTokenDescription !== undefined) {
+      updateData.holyshotTokenDescription = holyshotTokenDescription || null;
     }
 
     const settings = await prisma.settings.upsert({
@@ -140,6 +150,8 @@ export async function PUT(request: Request) {
         glmKeyDescription: settings.glmKeyDescription || '',
         deepseekKey: settings.deepseekKey ? maskKey(settings.deepseekKey) : '',
         deepseekKeyDescription: settings.deepseekKeyDescription || '',
+        holyshotToken: settings.holyshotToken ? maskKey(settings.holyshotToken) : '',
+        holyshotTokenDescription: settings.holyshotTokenDescription || '',
       },
     });
   } catch (error) {

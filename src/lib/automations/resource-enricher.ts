@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { BaserowClient } from '@/lib/baserow/client';
 import { createAIClient } from '@/lib/ai/client';
+import { captureScreenshot, type ScreenshotResult } from './screenshot';
 import type { ResourceEnricherConfig, AutomationStepResult } from '@/types/automator';
 import type { BaserowWebhookPayload } from '@/lib/baserow/types';
 import type { AIProvider } from '@/lib/ai/types';
@@ -137,20 +138,52 @@ async function getBaserowCredentials(): Promise<{
 }
 
 /**
- * Execute Resource Enricher automation
+ * Get Holyshot token from settings (optional)
+ */
+async function getHolyshotToken(): Promise<string | null> {
+  const settings = await prisma.settings.findUnique({
+    where: { id: 'default' },
+  });
+
+  return settings?.holyshotToken || null;
+}
+
+/**
+ * Save step progress to the database
+ */
+async function saveStepProgress(runId: string, steps: AutomationStepResult[]): Promise<void> {
+  await prisma.automationRun.update({
+    where: { id: runId },
+    data: {
+      steps: steps as unknown as object,
+    },
+  });
+}
+
+/**
+ * Execute Resource Enricher automation with progressive step saving
  */
 export async function executeResourceEnricher(
   config: ResourceEnricherConfig,
-  trigger: BaserowWebhookPayload
+  trigger: BaserowWebhookPayload,
+  runId?: string
 ): Promise<AutomationStepResult[]> {
   const steps: AutomationStepResult[] = [];
   let startTime: number;
+
+  // Helper to add step and save progress
+  const addStep = async (step: AutomationStepResult) => {
+    steps.push(step);
+    if (runId) {
+      await saveStepProgress(runId, steps);
+    }
+  };
 
   // Step 1: Extract URL from row
   startTime = Date.now();
   const url = trigger.row?.[config.baserow.urlField];
   if (!url || typeof url !== 'string') {
-    steps.push({
+    await addStep({
       name: 'extract_url',
       status: 'failed',
       duration: Date.now() - startTime,
@@ -158,7 +191,7 @@ export async function executeResourceEnricher(
     });
     return steps;
   }
-  steps.push({
+  await addStep({
     name: 'extract_url',
     status: 'success',
     duration: Date.now() - startTime,
@@ -170,7 +203,7 @@ export async function executeResourceEnricher(
   let crawlResult: CrawlResult;
   try {
     crawlResult = await crawlUrl(url);
-    steps.push({
+    await addStep({
       name: 'crawl_url',
       status: 'success',
       duration: Date.now() - startTime,
@@ -182,7 +215,7 @@ export async function executeResourceEnricher(
       },
     });
   } catch (error) {
-    steps.push({
+    await addStep({
       name: 'crawl_url',
       status: 'failed',
       duration: Date.now() - startTime,
@@ -204,7 +237,7 @@ export async function executeResourceEnricher(
   }
   const content = markdownContent || crawlResult.cleaned_html || crawlResult.html || '';
   if (!content) {
-    steps.push({
+    await addStep({
       name: 'ai_summarize',
       status: 'failed',
       duration: Date.now() - startTime,
@@ -221,7 +254,7 @@ export async function executeResourceEnricher(
       shortMaxLength: config.ai.shortMaxLength,
       longMaxLength: config.ai.longMaxLength,
     });
-    steps.push({
+    await addStep({
       name: 'ai_summarize',
       status: 'success',
       duration: Date.now() - startTime,
@@ -231,7 +264,7 @@ export async function executeResourceEnricher(
       },
     });
   } catch (error) {
-    steps.push({
+    await addStep({
       name: 'ai_summarize',
       status: 'failed',
       duration: Date.now() - startTime,
@@ -240,7 +273,59 @@ export async function executeResourceEnricher(
     return steps;
   }
 
-  // Step 4: Update Baserow row
+  // Step 4: Capture Screenshots (only if enableImageFields is true)
+  let pngScreenshot: ScreenshotResult | null = null;
+  let webpScreenshot: ScreenshotResult | null = null;
+
+  if (config.baserow.enableImageFields && (config.baserow.pngField || config.baserow.webpField)) {
+    const holyshotToken = await getHolyshotToken();
+
+    // Capture PNG screenshot
+    if (config.baserow.pngField) {
+      startTime = Date.now();
+      try {
+        pngScreenshot = await captureScreenshot(url, 'png', holyshotToken);
+        await addStep({
+          name: 'capture_png',
+          status: 'success',
+          duration: Date.now() - startTime,
+          data: { size: pngScreenshot.buffer.length },
+        });
+      } catch (error) {
+        await addStep({
+          name: 'capture_png',
+          status: 'failed',
+          duration: Date.now() - startTime,
+          error: error instanceof Error ? error.message : 'Failed to capture PNG screenshot',
+        });
+        // Don't return - continue with other steps
+      }
+    }
+
+    // Capture WebP screenshot
+    if (config.baserow.webpField) {
+      startTime = Date.now();
+      try {
+        webpScreenshot = await captureScreenshot(url, 'webp', holyshotToken);
+        await addStep({
+          name: 'capture_webp',
+          status: 'success',
+          duration: Date.now() - startTime,
+          data: { size: webpScreenshot.buffer.length },
+        });
+      } catch (error) {
+        await addStep({
+          name: 'capture_webp',
+          status: 'failed',
+          duration: Date.now() - startTime,
+          error: error instanceof Error ? error.message : 'Failed to capture WebP screenshot',
+        });
+        // Don't return - continue with other steps
+      }
+    }
+  }
+
+  // Step 5: Upload files and update Baserow row
   startTime = Date.now();
   try {
     const credentials = await getBaserowCredentials();
@@ -251,19 +336,70 @@ export async function executeResourceEnricher(
     if (!rowId) {
       throw new Error('No row_id found in trigger');
     }
-    await baserow.updateRow(config.baserow.tableId, rowId, {
+
+    // Build update data
+    const updateData: Record<string, unknown> = {
       [config.baserow.shortDescField]: summary.short,
       [config.baserow.longDescField]: summary.long,
-    });
+    };
 
-    steps.push({
+    // Upload and add PNG file if captured
+    if (pngScreenshot && config.baserow.pngField) {
+      try {
+        const pngFilename = `screenshot-${rowId}.png`;
+        const pngFile = await baserow.uploadFile(pngScreenshot.buffer, pngFilename, 'image/png');
+        updateData[config.baserow.pngField] = [{ name: pngFile.name }];
+        await addStep({
+          name: 'upload_png',
+          status: 'success',
+          duration: 0, // Will be part of update_baserow duration
+          data: { filename: pngFile.name },
+        });
+      } catch (error) {
+        await addStep({
+          name: 'upload_png',
+          status: 'failed',
+          duration: 0,
+          error: error instanceof Error ? error.message : 'Failed to upload PNG',
+        });
+        // Don't fail the entire operation
+      }
+    }
+
+    // Upload and add WebP file if captured
+    if (webpScreenshot && config.baserow.webpField) {
+      try {
+        const webpFilename = `screenshot-${rowId}.webp`;
+        const webpFile = await baserow.uploadFile(webpScreenshot.buffer, webpFilename, 'image/webp');
+        updateData[config.baserow.webpField] = [{ name: webpFile.name }];
+        await addStep({
+          name: 'upload_webp',
+          status: 'success',
+          duration: 0, // Will be part of update_baserow duration
+          data: { filename: webpFile.name },
+        });
+      } catch (error) {
+        await addStep({
+          name: 'upload_webp',
+          status: 'failed',
+          duration: 0,
+          error: error instanceof Error ? error.message : 'Failed to upload WebP',
+        });
+        // Don't fail the entire operation
+      }
+    }
+
+    // Update the row with all data
+    await baserow.updateRow(config.baserow.tableId, rowId, updateData);
+
+    await addStep({
       name: 'update_baserow',
       status: 'success',
       duration: Date.now() - startTime,
-      data: { rowId },
+      data: { rowId, fieldsUpdated: Object.keys(updateData) },
     });
   } catch (error) {
-    steps.push({
+    await addStep({
       name: 'update_baserow',
       status: 'failed',
       duration: Date.now() - startTime,

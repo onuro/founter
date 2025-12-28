@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
                   event_type: payload.event_type,
                   row_id: rowId || 0,
                   row: item,
-                }
+                },
+                runId // Pass runId for progressive step saving
               );
               break;
             default:

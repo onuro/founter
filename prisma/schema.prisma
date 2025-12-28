@@ -26,6 +26,8 @@ model Settings {
   glmKeyDescription       String?
   deepseekKey             String?
   deepseekKeyDescription  String?
+  holyshotToken           String?
+  holyshotTokenDescription String?
   updatedAt               DateTime @updatedAt
   createdAt               DateTime @default(now())
 }

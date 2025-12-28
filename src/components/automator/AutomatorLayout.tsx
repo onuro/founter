@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAutomations } from '@/hooks/useAutomations';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,10 +27,18 @@ function AutomationCard({
   onToggle: (enabled: boolean) => void;
   onDelete: () => void;
 }) {
+  const router = useRouter();
   const typeInfo = AUTOMATION_TYPES[automation.type];
 
+  const handleCardClick = () => {
+    router.push(`/automator/${automation.id}`);
+  };
+
   return (
-    <Card className="hover:bg-surface/50 transition-colors">
+    <Card
+      className="hover:bg-surface/50 transition-colors cursor-pointer"
+      onClick={handleCardClick}
+    >
       <CardContent>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -37,12 +46,9 @@ function AutomationCard({
               <Sparkles className="w-5 h-5 text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <Link
-                href={`/automator/${automation.id}`}
-                className="font-medium hover:underline block truncate"
-              >
+              <span className="font-medium block truncate">
                 {automation.name}
-              </Link>
+              </span>
               <p className="text-sm text-muted-foreground mt-0.5">
                 {typeInfo?.label || automation.type}
               </p>
@@ -71,7 +77,10 @@ function AutomationCard({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             <Switch
               checked={automation.enabled}
               onCheckedChange={onToggle}
@@ -86,6 +95,9 @@ function AutomationCard({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem asChild>
                   <Link href={`/automator/${automation.id}`}>View Details</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href={`/automator/${automation.id}/edit`}>Edit</Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={onDelete}

@@ -13,6 +13,9 @@ export interface ResourceEnricherConfig {
     urlField: string;
     shortDescField: string;
     longDescField: string;
+    enableImageFields?: boolean;  // Toggle for image updates
+    pngField?: string;            // Field name for PNG screenshot
+    webpField?: string;           // Field name for WebP screenshot
   };
   ai: {
     provider: AIProvider;

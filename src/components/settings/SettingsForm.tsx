@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Loader2, Save, Eye, EyeOff, Database, Brain } from 'lucide-react';
+import { Loader2, Save, Eye, EyeOff, Database, Brain, Camera } from 'lucide-react';
 
 export function SettingsForm() {
   const {
@@ -301,6 +301,54 @@ export function SettingsForm() {
               placeholder="Add a note..."
               className="text-sm"
             />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Screenshot API Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="w-4 h-4" />
+            Screenshot API
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label
+              htmlFor="holyshotToken"
+              className="text-xs uppercase tracking-wider text-muted-foreground"
+            >
+              Holyshot API Token (Optional)
+            </Label>
+            <div className="relative">
+              <Input
+                id="holyshotToken"
+                type={showKeys.holyshotToken ? 'text' : 'password'}
+                value={settings.holyshotToken}
+                onChange={(e) => handleInputChange('holyshotToken', e.target.value)}
+                placeholder="Enter Holyshot API token (optional)"
+                className="pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => toggleShowKey('holyshotToken')}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              >
+                {showKeys.holyshotToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+            <Input
+              id="holyshotTokenDescription"
+              type="text"
+              value={settings.holyshotTokenDescription}
+              onChange={(e) => handleInputChange('holyshotTokenDescription', e.target.value)}
+              placeholder="Add a note..."
+              className="text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Used for automated screenshot capture in automations. Leave empty if your Holyshot instance doesn&apos;t require auth.
+            </p>
           </div>
         </CardContent>
       </Card>

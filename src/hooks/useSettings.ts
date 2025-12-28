@@ -18,6 +18,8 @@ export function useSettings() {
     glmKeyDescription: '',
     deepseekKey: '',
     deepseekKeyDescription: '',
+    holyshotToken: '',
+    holyshotTokenDescription: '',
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);

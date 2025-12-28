@@ -12,6 +12,8 @@ export interface Settings {
   glmKeyDescription: string | null;
   deepseekKey: string | null;
   deepseekKeyDescription: string | null;
+  holyshotToken: string | null;
+  holyshotTokenDescription: string | null;
 }
 
 export interface SettingsFormData {
@@ -28,6 +30,8 @@ export interface SettingsFormData {
   glmKeyDescription: string;
   deepseekKey: string;
   deepseekKeyDescription: string;
+  holyshotToken: string;
+  holyshotTokenDescription: string;
 }
 
 export interface SettingsResponse {
