@@ -222,11 +222,71 @@ export const TAG_COLORS = [
     text: '[color:color-mix(in_oklch,theme(colors.cyan.600),white_30%)]',
     border: 'border-cyan-500/30',
   },
+  {
+    name: 'teal',
+    bg: 'bg-teal-800/20',
+    text: '[color:color-mix(in_oklch,theme(colors.teal.600),white_30%)]',
+    border: 'border-teal-500/30',
+  },
+  {
+    name: 'lime',
+    bg: 'bg-lime-900/20',
+    text: '[color:color-mix(in_oklch,theme(colors.lime.600),white_30%)]',
+    border: 'border-lime-500/30',
+  },
+  {
+    name: 'amber',
+    bg: 'bg-amber-900/20',
+    text: '[color:color-mix(in_oklch,theme(colors.amber.600),white_30%)]',
+    border: 'border-amber-500/30',
+  },
+  {
+    name: 'rose',
+    bg: 'bg-rose-800/20',
+    text: '[color:color-mix(in_oklch,theme(colors.rose.600),white_30%)]',
+    border: 'border-rose-500/30',
+  },
+  {
+    name: 'violet',
+    bg: 'bg-violet-800/20',
+    text: '[color:color-mix(in_oklch,theme(colors.violet.600),white_30%)]',
+    border: 'border-violet-500/30',
+  },
+  {
+    name: 'indigo',
+    bg: 'bg-indigo-800/20',
+    text: '[color:color-mix(in_oklch,theme(colors.indigo.600),white_30%)]',
+    border: 'border-indigo-500/30',
+  },
+  {
+    name: 'emerald',
+    bg: 'bg-emerald-800/20',
+    text: '[color:color-mix(in_oklch,theme(colors.emerald.600),white_30%)]',
+    border: 'border-emerald-500/30',
+  },
+  {
+    name: 'fuchsia',
+    bg: 'bg-fuchsia-800/20',
+    text: '[color:color-mix(in_oklch,theme(colors.fuchsia.600),white_30%)]',
+    border: 'border-fuchsia-500/30',
+  },
+  {
+    name: 'sky',
+    bg: 'bg-sky-800/20',
+    text: '[color:color-mix(in_oklch,theme(colors.sky.600),white_30%)]',
+    border: 'border-sky-500/30',
+  },
+  {
+    name: 'slate',
+    bg: 'bg-slate-700/20',
+    text: '[color:color-mix(in_oklch,theme(colors.slate.500),white_30%)]',
+    border: 'border-slate-500/30',
+  },
 ];
 
 // Boring mode style for monochrome tags
 export const TAG_BORING_STYLE = {
-  bg: 'bg-neutral-900',
+  bg: 'bg-neutral-800/50',
   text: 'text-neutral-300',
   border: 'border-neutral-700',
 };

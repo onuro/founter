@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback, type SetStateAction } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Plus, Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,7 @@ import { TableToolbar } from './TableToolbar';
 
 const OVERSCAN = 10;
 const LOAD_MORE_THRESHOLD = 20;
+export const SELECTION_COLUMN_WIDTH = 40;
 
 interface TableViewProps {
   table: CustomTable | null;
@@ -33,6 +34,11 @@ interface TableViewProps {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  // Selection props
+  selectedRowIds: Set<string>;
+  onSelectionChange: (value: SetStateAction<Set<string>>) => void;
+  onDeleteSelected?: () => void;
+  isDeleting?: boolean;
   className?: string;
 }
 
@@ -53,11 +59,44 @@ export function TableView({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
+  selectedRowIds,
+  onSelectionChange,
+  onDeleteSelected,
+  isDeleting = false,
   className,
 }: TableViewProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const rows = table?.rows || [];
   const rowHeightPx = ROW_HEIGHT_CONFIG[rowHeight].height;
+
+  // Selection handlers - use updater function to avoid stale closure with memoized rows
+  const toggleRowSelection = useCallback(
+    (rowId: string) => {
+      onSelectionChange((prev) => {
+        const newSelection = new Set(prev);
+        if (newSelection.has(rowId)) {
+          newSelection.delete(rowId);
+        } else {
+          newSelection.add(rowId);
+        }
+        return newSelection;
+      });
+    },
+    [onSelectionChange]
+  );
+
+  const selectAll = useCallback(() => {
+    const allRowIds = new Set(rows.map((r) => r.id));
+    onSelectionChange(allRowIds);
+  }, [rows, onSelectionChange]);
+
+  const deselectAll = useCallback(() => {
+    onSelectionChange(new Set());
+  }, [onSelectionChange]);
+
+  // Determine select-all checkbox state
+  const allSelected = rows.length > 0 && selectedRowIds.size === rows.length;
+  const someSelected = selectedRowIds.size > 0 && selectedRowIds.size < rows.length;
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -126,6 +165,10 @@ export function TableView({
           rowHeight={rowHeight}
           onRowHeightChange={onRowHeightChange}
           onAddRow={onAddRow}
+          selectedCount={selectedRowIds.size}
+          onDeleteSelected={onDeleteSelected}
+          onDeselectAll={deselectAll}
+          isDeleting={isDeleting}
         />
       )}
 
@@ -140,6 +183,11 @@ export function TableView({
             onDeleteField={onDeleteField}
             onReorderFields={onReorderFields}
             onResizeField={onResizeField}
+            allSelected={allSelected}
+            someSelected={someSelected}
+            onSelectAll={selectAll}
+            onDeselectAll={deselectAll}
+            disabled={isDeleting}
           />
 
           {/* Virtualized Rows */}
@@ -186,6 +234,9 @@ export function TableView({
                       rowHeight={rowHeight}
                       isSelected={selectedRowId === row.id}
                       onClick={() => onRowSelect(row.id)}
+                      isChecked={selectedRowIds.has(row.id)}
+                      onCheckChange={() => toggleRowSelection(row.id)}
+                      checkDisabled={isDeleting}
                     />
                   </div>
                 );

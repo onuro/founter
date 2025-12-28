@@ -21,6 +21,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { SELECTION_COLUMN_WIDTH } from './TableView';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +49,12 @@ interface TableHeaderProps {
   onDeleteField: (fieldId: string) => void;
   onReorderFields: (orderedIds: string[]) => void;
   onResizeField: (fieldId: string, width: number) => void;
+  // Selection props
+  allSelected?: boolean;
+  someSelected?: boolean;
+  onSelectAll?: () => void;
+  onDeselectAll?: () => void;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -95,6 +103,7 @@ function SortableHeaderCell({
     <div
       ref={setNodeRef}
       style={style}
+      onDoubleClick={() => onEditField(field)}
       className={cn(
         'group relative flex items-center justify-between border-r border-border px-3 py-2 select-none',
         isDragging && 'opacity-50 z-20'
@@ -163,6 +172,11 @@ export function TableHeader({
   onDeleteField,
   onReorderFields,
   onResizeField,
+  allSelected = false,
+  someSelected = false,
+  onSelectAll,
+  onDeselectAll,
+  disabled = false,
   className,
 }: TableHeaderProps) {
   const [resizing, setResizing] = useState<{
@@ -243,13 +257,35 @@ export function TableHeader({
     };
   }, [resizing, onResizeField]);
 
+  const handleCheckboxChange = () => {
+    if (allSelected || someSelected) {
+      onDeselectAll?.();
+    } else {
+      onSelectAll?.();
+    }
+  };
+
   return (
     <div
       className={cn(
-        'flex items-center border-b border-border bg-neutral-900 sticky top-0 z-10',
+        'flex items-center border-b border-border bg-surface sticky top-0 z-10',
         className
       )}
     >
+      {/* Selection checkbox column */}
+      <div
+        className="flex items-center justify-center border-r border-border shrink-0"
+        style={{ width: SELECTION_COLUMN_WIDTH, minWidth: SELECTION_COLUMN_WIDTH }}
+      >
+        <Checkbox
+          checked={allSelected ? true : someSelected ? 'indeterminate' : false}
+          onCheckedChange={handleCheckboxChange}
+          disabled={disabled}
+          aria-label="Select all rows"
+          className="cursor-pointer"
+        />
+      </div>
+
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}

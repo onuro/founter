@@ -189,7 +189,7 @@ export function TablesSidebar({
   return (
     <div className="flex flex-col h-full sticky top-0 bg-surface">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-3 border-b border-border">
+      <div className="flex items-center justify-between px-3 py-3 border-b border-r border-border">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Tables
         </h2>
@@ -204,7 +204,7 @@ export function TablesSidebar({
       </div>
 
       {/* Tables list */}
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="flex-1 overflow-y-auto p-2 border-r border-border">
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />

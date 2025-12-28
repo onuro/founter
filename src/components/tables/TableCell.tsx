@@ -207,7 +207,7 @@ export const TableCell = memo(
     return (
       <div
         className={cn(
-          'flex px-3 py-2 text-sm overflow-hidden',
+          'flex px-3 py-2.5 text-sm overflow-hidden',
           // Field-type-specific alignment
           field.type === 'select' && rowHeight !== 'small' ? 'items-start pt-1.5' : 'items-start',
           className

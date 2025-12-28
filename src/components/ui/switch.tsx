@@ -13,7 +13,7 @@ function Switch({
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        "peer inline-flex h-6 w-11 shrink-0 items-center rounded-full p-0.5 transition-all outline-none",
+        "peer inline-flex h-5 w-11 shrink-0 items-center rounded-full p-0.5 transition-all outline-none",
         "bg-black data-[state=checked]:bg-primary",
         "focus-visible:ring-2 focus-visible:ring-ring",
         "disabled:cursor-not-allowed disabled:opacity-50",
@@ -24,9 +24,9 @@ function Switch({
       <SwitchPrimitive.Thumb
         data-slot="switch-thumb"
         className={cn(
-          "pointer-events-none block size-5 rounded-full transition-transform",
+          "pointer-events-none block size-4 rounded-full transition-transform",
           "bg-neutral-600 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)]",
-          "data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0",
+          "data-[state=checked]:translate-x-6 data-[state=unchecked]:translate-x-0",
           "data-[state=checked]:bg-secondary"
         )}
       />

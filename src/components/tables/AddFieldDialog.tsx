@@ -190,10 +190,11 @@ export function AddFieldDialog({
 
   const addChoice = () => {
     if (!newChoiceLabel.trim()) return;
+    const randomIndex = Math.floor(Math.random() * TAG_COLORS.length);
     const newChoice = {
       id: crypto.randomUUID(),
       label: newChoiceLabel.trim(),
-      color: TAG_COLORS[choices.length % TAG_COLORS.length].name,
+      color: TAG_COLORS[randomIndex].name,
     };
     setChoices([...choices, newChoice]);
     setNewChoiceLabel('');
@@ -241,7 +242,7 @@ export function AddFieldDialog({
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Field Type
               </Label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 gap-1 p-1 bg-secondary rounded-md">
                 {FIELD_TYPES.map((fieldType) => {
                   const config = FIELD_TYPE_CONFIG[fieldType];
                   return (
@@ -249,13 +250,14 @@ export function AddFieldDialog({
                       key={fieldType}
                       onClick={() => setType(fieldType)}
                       className={cn(
-                        'flex flex-col items-center gap-1.5 p-3 rounded-md transition-colors',
+                        'flex flex-col items-center gap-2.5 p-3 rounded-sm transition-colors',
                         type === fieldType
-                          ? 'shadow-inset-emboss ring-2 ring-primary ring-offset-2 ring-offset-background bg-neutral-900'
-                          : 'bg-secondary hover:bg-neutral-950'
+                          // ? 'shadow-inset-emboss inset-ring-2 inset-ring-primary'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-neutral-900 shadow-inset-emboss-soft hover:bg-neutral-800/75'
                       )}
                     >
-                      <FieldTypeIcon type={fieldType} size="md" className={type === fieldType ? 'text-foreground' : ''} />
+                      <FieldTypeIcon type={fieldType} size="md" className={type === fieldType ? 'text-primary-foreground' : ''} />
                       <span className="text-xs">{config.label}</span>
                     </button>
                   );
@@ -271,7 +273,7 @@ export function AddFieldDialog({
                 </Label>
 
                 {/* Existing choices */}
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto">
                   {choices.map((choice) => {
                     const color = boringMode
                       ? TAG_BORING_STYLE
@@ -310,9 +312,11 @@ export function AddFieldDialog({
                     placeholder="Add option..."
                     className="bg-secondary flex-1"
                   />
-                  <Button variant="secondary" size="sm" onClick={addChoice}>
-                    Add
-                  </Button>
+                  <div className="bg-secondary flex p-1 rounded-sm">
+                    <Button variant="secondary" className="size-8.5 h-full px-8 text-xs" onClick={addChoice}>
+                      Add
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Allow multiple */}

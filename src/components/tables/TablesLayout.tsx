@@ -10,7 +10,17 @@ import { TableView } from './TableView';
 import { RowDetailSheet } from './RowDetailSheet';
 import { CreateTableDialog } from './CreateTableDialog';
 import { AddFieldDialog } from './AddFieldDialog';
-import type { Field, Row, CreateFieldInput, RowHeight } from '@/types/tables';
+import type { Field, CreateFieldInput, RowHeight } from '@/types/tables';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export function TablesLayout() {
   const router = useRouter();
@@ -30,6 +40,11 @@ export function TablesLayout() {
     }
     return 'small';
   });
+
+  // Selection state
+  const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Hooks
   const {
@@ -56,6 +71,7 @@ export function TablesLayout() {
     createRow,
     updateRow,
     deleteRow,
+    deleteRows,
   } = useTable(tableId || null, { paginate: true, pageSize: 100 });
 
   // Auto-select first table if none selected
@@ -64,6 +80,11 @@ export function TablesLayout() {
       router.push(`/tables/${tables[0].id}`);
     }
   }, [tableId, tables, isLoadingTables, router]);
+
+  // Clear selection when table changes
+  useEffect(() => {
+    setSelectedRowIds(new Set());
+  }, [tableId]);
 
   // Handlers
   const handleSelectTable = useCallback(
@@ -243,6 +264,23 @@ export function TablesLayout() {
     [deleteRow]
   );
 
+  const handleDeleteSelectedRows = useCallback(async () => {
+    if (selectedRowIds.size === 0) return;
+
+    setIsDeleting(true);
+    try {
+      const rowIds = Array.from(selectedRowIds);
+      const deletedCount = await deleteRows(rowIds);
+      toast.success(`Deleted ${deletedCount} row${deletedCount !== 1 ? 's' : ''}`);
+      setSelectedRowIds(new Set());
+    } catch (error) {
+      toast.error('Failed to delete rows');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }, [selectedRowIds, deleteRows]);
+
   const selectedRow = table?.rows.find((r) => r.id === selectedRowId) || null;
 
   return (
@@ -280,6 +318,10 @@ export function TablesLayout() {
           hasMore={hasMore}
           isLoadingMore={isLoadingMore}
           onLoadMore={loadMoreRows}
+          selectedRowIds={selectedRowIds}
+          onSelectionChange={setSelectedRowIds}
+          onDeleteSelected={() => setShowDeleteConfirm(true)}
+          isDeleting={isDeleting}
         />
       </div>
 
@@ -308,6 +350,32 @@ export function TablesLayout() {
         onDelete={handleDeleteRow}
         isNew={isNewRow}
       />
+
+      {/* Bulk delete confirmation dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {selectedRowIds.size} row{selectedRowIds.size !== 1 ? 's' : ''}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the selected rows. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting} className="cursor-pointer">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteSelectedRows}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 cursor-pointer"
+            >
+              {isDeleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

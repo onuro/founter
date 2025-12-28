@@ -5,6 +5,8 @@ import { cn } from '@/lib/utils';
 import type { Field, Row, RowHeight } from '@/types/tables';
 import { ROW_HEIGHT_CONFIG } from '@/types/tables';
 import { TableCell } from './TableCell';
+import { Checkbox } from '@/components/ui/checkbox';
+import { SELECTION_COLUMN_WIDTH } from './TableView';
 
 interface TableRowProps {
   row: Row;
@@ -12,6 +14,10 @@ interface TableRowProps {
   rowHeight?: RowHeight;
   isSelected?: boolean;
   onClick?: () => void;
+  // Selection props
+  isChecked?: boolean;
+  onCheckChange?: () => void;
+  checkDisabled?: boolean;
   className?: string;
 }
 
@@ -22,6 +28,9 @@ export const TableRow = memo(
     rowHeight = 'small',
     isSelected,
     onClick,
+    isChecked = false,
+    onCheckChange,
+    checkDisabled = false,
     className,
   }: TableRowProps) {
     const config = ROW_HEIGHT_CONFIG[rowHeight];
@@ -33,8 +42,10 @@ export const TableRow = memo(
         // Don't open detail sheet if:
         // 1. Clicking on image thumbnail (lightbox trigger)
         // 2. ANY dialog is currently open (prevents portal click leakage)
+        // 3. Clicking on checkbox
         if (
           target.closest('[data-lightbox-trigger]') ||
+          target.closest('[data-row-checkbox]') ||
           document.querySelector('[role="dialog"]')
         ) {
           return;
@@ -43,6 +54,16 @@ export const TableRow = memo(
         onClick?.();
       },
       [onClick]
+    );
+
+    const handleCheckboxCellClick = useCallback(
+      (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!checkDisabled) {
+          onCheckChange?.();
+        }
+      },
+      [checkDisabled, onCheckChange]
     );
 
     return (
@@ -55,6 +76,21 @@ export const TableRow = memo(
         style={{ height: config.height }}
         onClick={handleClick}
       >
+        {/* Selection checkbox cell */}
+        <div
+          data-row-checkbox
+          className="flex items-start pt-3 justify-center border-r border-border shrink-0 h-full"
+          style={{ width: SELECTION_COLUMN_WIDTH, minWidth: SELECTION_COLUMN_WIDTH }}
+          onClick={handleCheckboxCellClick}
+        >
+          <Checkbox
+            checked={isChecked}
+            disabled={checkDisabled}
+            aria-label={`Select row ${row.id}`}
+            className="cursor-pointer pointer-events-none"
+          />
+        </div>
+
         {fields.map((field) => (
           <div
             key={field.id}
@@ -72,6 +108,8 @@ export const TableRow = memo(
       prevProps.row.id === nextProps.row.id &&
       prevProps.row.updatedAt === nextProps.row.updatedAt &&
       prevProps.isSelected === nextProps.isSelected &&
+      prevProps.isChecked === nextProps.isChecked &&
+      prevProps.checkDisabled === nextProps.checkDisabled &&
       prevProps.rowHeight === nextProps.rowHeight &&
       prevProps.fields === nextProps.fields
     );

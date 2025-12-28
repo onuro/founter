@@ -269,8 +269,38 @@ export function useTable(tableId: string | null, options: UseTableOptions = {}) 
             ? { ...prev, rows: prev.rows.filter((r) => r.id !== rowId) }
             : prev
         );
+        setTotalRows((prev) => Math.max(0, prev - 1));
       } else {
         throw new Error(data.error || 'Failed to delete row');
+      }
+    },
+    [tableId]
+  );
+
+  const deleteRows = useCallback(
+    async (rowIds: string[]): Promise<number> => {
+      if (!tableId) throw new Error('No table selected');
+      if (rowIds.length === 0) return 0;
+
+      const res = await fetch(`/api/tables/${tableId}/rows/bulk-delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rowIds }),
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        const deletedCount = data.data.deletedCount;
+        const deletedSet = new Set(rowIds);
+        setTable((prev) =>
+          prev
+            ? { ...prev, rows: prev.rows.filter((r) => !deletedSet.has(r.id)) }
+            : prev
+        );
+        setTotalRows((prev) => Math.max(0, prev - deletedCount));
+        return deletedCount;
+      } else {
+        throw new Error(data.error || 'Failed to delete rows');
       }
     },
     [tableId]
@@ -296,5 +326,6 @@ export function useTable(tableId: string | null, options: UseTableOptions = {}) 
     createRow,
     updateRow,
     deleteRow,
+    deleteRows,
   };
 }
