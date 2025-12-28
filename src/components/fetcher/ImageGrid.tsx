@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lightbox, useLightbox } from '@/components/ui/lightbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Copy, Check, ExternalLink, ImageIcon, LayoutGrid, Link2 } from 'lucide-react';
+import { Copy, Check, ExternalLink, ImageIcon, LayoutGrid, Link2, Save } from 'lucide-react';
 import {
   COLUMN_OPTIONS,
   GAP_OPTIONS,
@@ -23,9 +23,10 @@ interface ImageGridProps {
   images: ExtractedImage[];
   crawledUrl: string | null;
   gridOptions?: GridOptions;
+  onSave?: () => void;
 }
 
-export function ImageGrid({ images, crawledUrl, gridOptions }: ImageGridProps) {
+export function ImageGrid({ images, crawledUrl, gridOptions, onSave }: ImageGridProps) {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
   const [columns, setColumns] = useState<number>(DEFAULT_COLUMNS);
@@ -100,13 +101,20 @@ export function ImageGrid({ images, crawledUrl, gridOptions }: ImageGridProps) {
                 </a>
               )}
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="cursor-pointer gap-2">
-                  <LayoutGrid className="w-4 h-4" />
-                  <span className="hidden sm:inline">Grid Options</span>
+            <div className="flex items-center gap-2">
+              {onSave && (
+                <Button variant="outline" size="sm" className="cursor-pointer gap-2" onClick={onSave}>
+                  <Save className="w-4 h-4" />
+                  <span className="hidden sm:inline">Save</span>
                 </Button>
-              </PopoverTrigger>
+              )}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="cursor-pointer gap-2">
+                    <LayoutGrid className="w-4 h-4" />
+                    <span className="hidden sm:inline">Grid Options</span>
+                  </Button>
+                </PopoverTrigger>
               <PopoverContent className="w-72" align="end">
                 <div className="space-y-4">
                   <div className="space-y-2">
@@ -160,7 +168,8 @@ export function ImageGrid({ images, crawledUrl, gridOptions }: ImageGridProps) {
                   </div>
                 </div>
               </PopoverContent>
-            </Popover>
+              </Popover>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

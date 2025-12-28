@@ -239,6 +239,15 @@ export function useCrawl() {
     }
   }, []);
 
+  // Load images directly (for saved fetches)
+  const loadImages = useCallback((loadedImages: ExtractedImage[], url: string) => {
+    setImages(loadedImages);
+    setCrawledUrl(url);
+    setError(null);
+    setScrollUsed(null);
+    setPhase('complete');
+  }, []);
+
   return {
     images,
     isLoading,
@@ -249,5 +258,6 @@ export function useCrawl() {
     phase,
     crawlUrl,
     clearResults,
+    loadImages,
   };
 }

@@ -48,8 +48,14 @@ prisma/dev.db-journal
 *.db
 *.db-journal
 
-# Uploaded files
+# Uploaded files (keep directory structure with .gitkeep)
 /uploads
+/public/uploads/*
+!/public/uploads/.gitkeep
+
+# Saved fetcher images (keep directory structure with .gitkeep)
+/public/imgfetcher-saved-images/*
+!/public/imgfetcher-saved-images/.gitkeep
 
 # Database backups
 /backups

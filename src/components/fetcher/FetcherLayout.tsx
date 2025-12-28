@@ -6,13 +6,16 @@ import { URLInput } from './URLInput';
 import { ImageGrid } from './ImageGrid';
 import { CrawlOptionsSheet } from './CrawlOptionsSheet';
 import { PresetsSheet } from './PresetsSheet';
+import { SaveFetchDialog } from './SaveFetchDialog';
+import { SavedFetchesSheet } from './SavedFetchesSheet';
 import { useCrawl } from '@/hooks/useCrawl';
 import { useHistory } from '@/hooks/useHistory';
 import { usePresets } from '@/hooks/usePresets';
+import { useImageFetcherSaved } from '@/hooks/useImageFetcherSaved';
 import { HistorySheet } from '@/components/ui/history-sheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, History, Settings, ImageIcon, FileText } from 'lucide-react';
+import { Loader2, History, Settings, ImageIcon, FileText, Save } from 'lucide-react';
 import { ScrollOptions, DEFAULT_SCROLL_OPTIONS, CrawlPhase } from '@/types/crawl';
 import { toast } from 'sonner';
 import type { SitePreset, GridOptions } from '@/types/preset';
@@ -36,7 +39,7 @@ const phaseMessages: Record<CrawlPhase, string> = {
 };
 
 export function FetcherLayout() {
-  const { images, isLoading, error, crawledUrl, scrollUsed, elapsedSeconds, phase, crawlUrl, clearResults } = useCrawl();
+  const { images, isLoading, error, crawledUrl, scrollUsed, elapsedSeconds, phase, crawlUrl, clearResults, loadImages } = useCrawl();
   const { items, addItem, removeItem, clearAll } = useHistory({
     key: 'fetcher-history',
     maxItems: 20,
@@ -50,15 +53,26 @@ export function FetcherLayout() {
     reorderPresets,
     refetch: refetchPresets,
   } = usePresets('IMAGE', { immediate: false }); // Defer fetch until sheet opens
+  const {
+    saved,
+    isLoading: savedLoading,
+    save: saveImages,
+    remove: removeSaved,
+    getSavedWithImages,
+    refetch: refetchSaved,
+  } = useImageFetcherSaved({ immediate: false });
 
   const [historyOpen, setHistoryOpen] = useState(false);
   const [optionsOpen, setOptionsOpen] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
+  const [savedOpen, setSavedOpen] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
 
   // Lazy mount tracking - sheets only mount after first open
   const [hasOpenedHistory, setHasOpenedHistory] = useState(false);
   const [hasOpenedOptions, setHasOpenedOptions] = useState(false);
   const [hasOpenedPresets, setHasOpenedPresets] = useState(false);
+  const [hasOpenedSaved, setHasOpenedSaved] = useState(false);
   const [scrollOptions, setScrollOptions] = useState<ScrollOptions>(DEFAULT_SCROLL_OPTIONS);
   const [activeCookies, setActiveCookies] = useState<string | undefined>(undefined);
   const [activeLoadMoreSelector, setActiveLoadMoreSelector] = useState<string | undefined>(undefined);
@@ -138,6 +152,37 @@ export function FetcherLayout() {
     startTransition(() => setPresetsOpen(true));
   }, [refetchPresets]);
 
+  const openSaved = useCallback(() => {
+    setHasOpenedSaved(true);
+    refetchSaved();
+    startTransition(() => setSavedOpen(true));
+  }, [refetchSaved]);
+
+  const openSaveDialog = useCallback(() => {
+    setSaveDialogOpen(true);
+  }, []);
+
+  const handleSave = useCallback(async (label: string) => {
+    if (!crawledUrl) return;
+    await saveImages(label, crawledUrl, images, { scroll: scrollOptions });
+    toast.success('Images saved successfully');
+  }, [crawledUrl, images, scrollOptions, saveImages]);
+
+  const handleSavedSelect = useCallback(async (item: { id: string }) => {
+    const savedWithImages = await getSavedWithImages(item.id);
+    // Convert saved images format to ExtractedImage format
+    const extractedImages = savedWithImages.images.map((img) => ({
+      src: img.localPath,
+      alt: img.alt ?? undefined,
+      width: img.width ?? undefined,
+      link: img.link ?? undefined,
+    }));
+    // Load images into the view
+    loadImages(extractedImages, savedWithImages.url);
+    setInputUrl(savedWithImages.url);
+    toast.success(`Loaded ${extractedImages.length} images from "${savedWithImages.label}"`);
+  }, [getSavedWithImages, loadImages]);
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <ContentHeader title="Fetcher" />
@@ -152,6 +197,15 @@ export function FetcherLayout() {
               </p>
             </div>
             <div className="flex items-center gap-1 bg-secondary p-1 rounded-md">
+              <Button
+                variant="secondary"
+                size="icon"
+                onClick={openSaved}
+                title="Saved fetches"
+                className="cursor-pointer"
+              >
+                <Save className="w-4 h-4" />
+              </Button>
               <Button
                 variant="secondary"
                 size="icon"
@@ -233,7 +287,7 @@ export function FetcherLayout() {
 
             {/* Results */}
             {!isLoading && images.length > 0 && (
-              <ImageGrid images={images} crawledUrl={crawledUrl} gridOptions={activeGridOptions} />
+              <ImageGrid images={images} crawledUrl={crawledUrl} gridOptions={activeGridOptions} onSave={openSaveDialog} />
             )}
 
             {/* Empty State */}
@@ -292,6 +346,25 @@ export function FetcherLayout() {
           onPresetReorder={reorderPresets}
         />
       )}
+
+      {hasOpenedSaved && (
+        <SavedFetchesSheet
+          open={savedOpen}
+          onOpenChange={setSavedOpen}
+          saved={saved}
+          isLoading={savedLoading}
+          onSelect={handleSavedSelect}
+          onDelete={removeSaved}
+        />
+      )}
+
+      <SaveFetchDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        imageCount={images.length}
+        url={crawledUrl || ''}
+        onSave={handleSave}
+      />
     </div>
   );
 }

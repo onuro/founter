@@ -87,6 +87,38 @@ model Row {
 }
 
 // ==========================================
+// Image Fetcher Saved Feature
+// ==========================================
+
+model ImageFetcherSaved {
+  id         String                   @id @default(cuid())
+  url        String
+  label      String
+  images     ImageFetcherSavedImage[]
+  imageCount Int
+  options    Json?
+  createdAt  DateTime                 @default(now())
+  updatedAt  DateTime                 @updatedAt
+
+  @@index([createdAt])
+}
+
+model ImageFetcherSavedImage {
+  id          String            @id @default(cuid())
+  savedId     String
+  saved       ImageFetcherSaved @relation(fields: [savedId], references: [id], onDelete: Cascade)
+  originalUrl String
+  localPath   String
+  filename    String
+  width       Int?
+  alt         String?
+  link        String?
+  createdAt   DateTime          @default(now())
+
+  @@index([savedId])
+}
+
+// ==========================================
 // Automator Feature
 // ==========================================
 
