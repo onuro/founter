@@ -133,7 +133,7 @@ function renderCellValue(
           href={urlStr}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-blue-400 hover:text-blue-300 truncate"
+          className="flex items-center gap-1 text-amber-200 hover:text-amber-100 truncate"
           onClick={(e) => e.stopPropagation()}
         >
           <span className="truncate">{urlStr}</span>

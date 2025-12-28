@@ -25,7 +25,7 @@ export function UrlInput({ field, value, onChange }: UrlInputProps) {
           value={value || ''}
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://example.com"
-          className="bg-secondary flex-1"
+          className="flex-1"
         />
         {value && (
           <Button
