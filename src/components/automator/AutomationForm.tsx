@@ -369,7 +369,7 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
           <CardContent className="space-y-5">
             {baserowError && (
               <div className="p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                <p className="text-sm text-destructive">{baserowError}</p>
+                <p className="text-sm text-destructive-fg">{baserowError}</p>
               </div>
             )}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

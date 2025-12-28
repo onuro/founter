@@ -146,10 +146,7 @@ function SortableTableItem({
             <Pencil className="w-4 h-4 mr-2" />
             Rename
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={onDelete}
-            className="text-destructive focus:text-destructive"
-          >
+          <DropdownMenuItem onClick={onDelete} variant="destructive">
             <Trash2 className="w-4 h-4 mr-2" />
             Delete
           </DropdownMenuItem>

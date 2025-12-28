@@ -211,7 +211,7 @@ export function RowDetailSheet({
                   size="sm"
                   onClick={handleDelete}
                   disabled={isDeleting || isSaving}
-                  className="text-destructive hover:text-destructive"
+                  className="text-destructive-fg"
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   {isDeleting ? 'Deleting...' : 'Delete'}

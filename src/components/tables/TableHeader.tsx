@@ -148,7 +148,7 @@ function SortableHeaderCell({
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={() => onDeleteField(field.id)}
-            className="text-destructive focus:text-destructive"
+            variant="destructive"
           >
             <Trash2 className="w-4 h-4 mr-2" />
             Delete Field

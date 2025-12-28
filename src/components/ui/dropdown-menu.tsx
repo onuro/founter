@@ -83,8 +83,8 @@ function DropdownMenuItem({
         "hover:bg-neutral-900/50",
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         "data-[inset]:pl-8",
-        "data-[variant=destructive]:text-destructive data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive",
-        "data-[variant=destructive]:*:[svg]:!text-destructive",
+        "data-[variant=destructive]:text-destructive-fg data-[variant=destructive]:focus:bg-destructive/10 dark:data-[variant=destructive]:focus:bg-destructive/20 data-[variant=destructive]:focus:text-destructive-fg",
+        "data-[variant=destructive]:*:[svg]:!text-destructive-fg",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-3.5 [&_svg:not([class*='text-'])]:text-muted-foreground",
         className
       )}

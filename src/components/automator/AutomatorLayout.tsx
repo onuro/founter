@@ -183,7 +183,7 @@ export function AutomatorLayout() {
       ) : error ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-sm text-destructive">{error}</p>
+            <p className="text-sm text-destructive-fg">{error}</p>
           </CardContent>
         </Card>
       ) : automations.length === 0 ? (

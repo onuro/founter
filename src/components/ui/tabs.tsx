@@ -7,7 +7,7 @@ import { cva } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const tabsListVariants = cva(
-  "relative bg-secondary text-muted-foreground inline-flex w-full items-center justify-center rounded-md gap-1",
+  "relative bg-secondary shadow-inset-frame text-muted-foreground inline-flex w-full items-center justify-center rounded-md gap-1",
   {
     variants: {
       size: {

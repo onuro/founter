@@ -73,7 +73,7 @@ function RunRow({ run }: { run: AutomationRun }) {
         <div className="px-4 py-3 bg-secondary/30 space-y-3">
           {run.error && (
             <div className="p-2 rounded bg-destructive/10 border border-destructive/20">
-              <p className="text-sm text-destructive">{run.error}</p>
+              <p className="text-sm text-destructive-fg">{run.error}</p>
             </div>
           )}
           {run.steps.length > 0 && (
@@ -100,7 +100,7 @@ function RunRow({ run }: { run: AutomationRun }) {
                   <div className="flex items-center gap-4 text-muted-foreground">
                     <span>{(step.duration / 1000).toFixed(1)}s</span>
                     {step.error && (
-                      <span className="text-destructive text-xs">
+                      <span className="text-destructive-fg text-xs">
                         {step.error}
                       </span>
                     )}
