@@ -249,13 +249,13 @@ export function AddFieldDialog({
                       key={fieldType}
                       onClick={() => setType(fieldType)}
                       className={cn(
-                        'flex flex-col items-center gap-1.5 p-3 rounded-md border transition-colors',
+                        'flex flex-col items-center gap-1.5 p-3 rounded-md transition-colors',
                         type === fieldType
-                          ? 'border-primary bg-primary/10'
-                          : 'border-border hover:border-neutral-600 bg-secondary/50'
+                          ? 'shadow-inset-emboss ring-2 ring-primary ring-offset-2 ring-offset-background bg-neutral-900'
+                          : 'bg-secondary hover:bg-neutral-950'
                       )}
                     >
-                      <FieldTypeIcon type={fieldType} size="md" />
+                      <FieldTypeIcon type={fieldType} size="md" className={type === fieldType ? 'text-foreground' : ''} />
                       <span className="text-xs">{config.label}</span>
                     </button>
                   );
