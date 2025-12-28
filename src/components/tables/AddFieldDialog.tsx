@@ -26,7 +26,13 @@ import {
 import type { FieldType, CreateFieldInput, Field, SelectFieldOptions, SelectChoice } from '@/types/tables';
 import { FIELD_TYPE_CONFIG, TAG_COLORS, TAG_BORING_STYLE } from '@/types/tables';
 import { FieldTypeIcon } from './FieldTypeIcon';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+  InputGroupButton,
+} from '@/components/ui/input-group';
 
 interface AddFieldDialogProps {
   open: boolean;
@@ -214,7 +220,7 @@ export function AddFieldDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[450px]">
+        <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
             <DialogTitle>
               {isEditing ? 'Edit Field' : 'Add Field'}
@@ -243,16 +249,27 @@ export function AddFieldDialog({
                 Field Type
               </Label>
               <div className="grid grid-cols-4 gap-1 p-1 bg-secondary rounded-md">
-                {FIELD_TYPES.map((fieldType) => {
+                {FIELD_TYPES.map((fieldType, index) => {
                   const config = FIELD_TYPE_CONFIG[fieldType];
+                  const cols = 4;
+                  const totalItems = FIELD_TYPES.length;
+                  const lastRowStart = totalItems - (totalItems % cols || cols);
+                  // Corner radius: sm for outer corners, xs for inner edges
+                  const isTopLeft = index === 0;
+                  const isTopRight = index === cols - 1;
+                  const isBottomLeft = index === lastRowStart;
+                  const isBottomRight = index === totalItems - 1;
                   return (
                     <button
                       key={fieldType}
                       onClick={() => setType(fieldType)}
                       className={cn(
-                        'flex flex-col items-center gap-2.5 p-3 rounded-sm transition-colors',
+                        'flex flex-col items-center gap-2.5 p-3 rounded-[2px] transition-colors',
+                        isTopLeft && 'rounded-tl-sm',
+                        isTopRight && 'rounded-tr-sm',
+                        isBottomLeft && 'rounded-bl-sm',
+                        isBottomRight && 'rounded-br-sm',
                         type === fieldType
-                          // ? 'shadow-inset-emboss inset-ring-2 inset-ring-primary'
                           ? 'bg-primary text-primary-foreground'
                           : 'bg-neutral-900 shadow-inset-emboss-soft hover:bg-neutral-800/75'
                       )}
@@ -299,8 +316,8 @@ export function AddFieldDialog({
                 </div>
 
                 {/* Add new choice */}
-                <div className="flex gap-2">
-                  <Input
+                <InputGroup className='mb-6'>
+                  <InputGroupInput
                     value={newChoiceLabel}
                     onChange={(e) => setNewChoiceLabel(e.target.value)}
                     onKeyDown={(e) => {
@@ -310,20 +327,20 @@ export function AddFieldDialog({
                       }
                     }}
                     placeholder="Add option..."
-                    className="bg-secondary flex-1"
                   />
-                  <div className="bg-secondary flex p-1 rounded-sm">
-                    <Button variant="secondary" className="size-8.5 h-full px-8 text-xs" onClick={addChoice}>
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton variant="secondary" size="xs" onClick={addChoice} className="text-[11px] gap-2 rounded-xs">
+                      <Plus className="size-3" />
                       Add
-                    </Button>
-                  </div>
-                </div>
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
 
                 {/* Allow multiple */}
-                <div className="flex items-center justify-between pt-2">
+                {/* <div className="flex items-center justify-between pt-2">
                   <Label className="text-sm text-muted-foreground">Allow multiple selections</Label>
                   <Switch checked={allowMultiple} onCheckedChange={setAllowMultiple} />
-                </div>
+                </div> */}
 
                 {/* Boring mode */}
                 <div className="flex items-center justify-between">
@@ -334,10 +351,10 @@ export function AddFieldDialog({
             )}
 
             {/* Required */}
-            <div className="flex items-center justify-between">
+            {/* <div className="flex items-center justify-between">
               <Label className="text-sm text-muted-foreground">Required field</Label>
               <Switch checked={required} onCheckedChange={setRequired} />
-            </div>
+            </div> */}
           </div>
 
           <DialogFooter>
