@@ -98,7 +98,7 @@ async function downloadSingleImage(
 
     // Extract savedId from baseDir path
     const savedId = baseDir.split('/').pop() || '';
-    const localPath = `/imgfetcher-saved-images/${savedId}/${filename}`;
+    const localPath = `/api/uploads/imgfetcher-saved-images/${savedId}/${filename}`;
 
     // Get image data as buffer
     const arrayBuffer = await response.arrayBuffer();
@@ -129,7 +129,7 @@ export async function downloadImagesInBatches(
   savedId: string,
   onProgress?: (progress: DownloadProgress) => Promise<void>
 ): Promise<DownloadedImage[]> {
-  const baseDir = join(process.cwd(), 'public', 'imgfetcher-saved-images', savedId);
+  const baseDir = join(process.cwd(), 'uploads', 'imgfetcher-saved-images', savedId);
 
   // Create directory
   await mkdir(baseDir, { recursive: true });
@@ -192,7 +192,7 @@ export async function downloadImages(
  */
 export async function deleteSavedImagesFolder(savedId: string): Promise<void> {
   const { rm } = await import('fs/promises');
-  const baseDir = join(process.cwd(), 'public', 'imgfetcher-saved-images', savedId);
+  const baseDir = join(process.cwd(), 'uploads', 'imgfetcher-saved-images', savedId);
 
   try {
     await rm(baseDir, { recursive: true, force: true });

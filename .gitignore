@@ -53,9 +53,5 @@ prisma/dev.db-journal
 /public/uploads/*
 !/public/uploads/.gitkeep
 
-# Saved fetcher images (keep directory structure with .gitkeep)
-/public/imgfetcher-saved-images/*
-!/public/imgfetcher-saved-images/.gitkeep
-
 # Database backups
 /backups
