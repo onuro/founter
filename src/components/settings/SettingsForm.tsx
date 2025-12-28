@@ -20,8 +20,33 @@ export function SettingsForm() {
   } = useSettings();
 
   const [showKeys, setShowKeys] = useState<Record<string, boolean>>({});
+  const [revealedKeys, setRevealedKeys] = useState<Record<string, string>>({});
+  const [revealingKey, setRevealingKey] = useState<string | null>(null);
 
-  const toggleShowKey = (key: string) => {
+  const toggleShowKey = async (key: string) => {
+    const isCurrentlyVisible = showKeys[key];
+
+    if (!isCurrentlyVisible && !revealedKeys[key]) {
+      // Fetch the full key from the server
+      setRevealingKey(key);
+      try {
+        const response = await fetch('/api/settings/reveal', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ field: key }),
+        });
+        const data = await response.json();
+        if (data.success) {
+          setRevealedKeys(prev => ({ ...prev, [key]: data.value }));
+          setSettings(prev => ({ ...prev, [key]: data.value }));
+        }
+      } catch {
+        // Silently fail, will show masked value
+      } finally {
+        setRevealingKey(null);
+      }
+    }
+
     setShowKeys(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
@@ -107,9 +132,12 @@ export function SettingsForm() {
                 <button
                   type="button"
                   onClick={() => toggleShowKey('baserowPassword')}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  disabled={revealingKey === 'baserowPassword'}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {showKeys.baserowPassword ? (
+                  {revealingKey === 'baserowPassword' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : showKeys.baserowPassword ? (
                     <EyeOff className="w-4 h-4" />
                   ) : (
                     <Eye className="w-4 h-4" />
@@ -133,9 +161,12 @@ export function SettingsForm() {
               <button
                 type="button"
                 onClick={() => toggleShowKey('baserowToken')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={revealingKey === 'baserowToken'}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
               >
-                {showKeys.baserowToken ? (
+                {revealingKey === 'baserowToken' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : showKeys.baserowToken ? (
                   <EyeOff className="w-4 h-4" />
                 ) : (
                   <Eye className="w-4 h-4" />
@@ -183,9 +214,16 @@ export function SettingsForm() {
               <button
                 type="button"
                 onClick={() => toggleShowKey('openaiKey')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={revealingKey === 'openaiKey'}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
               >
-                {showKeys.openaiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {revealingKey === 'openaiKey' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : showKeys.openaiKey ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
             <Input
@@ -218,9 +256,16 @@ export function SettingsForm() {
               <button
                 type="button"
                 onClick={() => toggleShowKey('anthropicKey')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={revealingKey === 'anthropicKey'}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
               >
-                {showKeys.anthropicKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {revealingKey === 'anthropicKey' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : showKeys.anthropicKey ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
             <Input
@@ -253,9 +298,16 @@ export function SettingsForm() {
               <button
                 type="button"
                 onClick={() => toggleShowKey('glmKey')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={revealingKey === 'glmKey'}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
               >
-                {showKeys.glmKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {revealingKey === 'glmKey' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : showKeys.glmKey ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
             <Input
@@ -288,9 +340,16 @@ export function SettingsForm() {
               <button
                 type="button"
                 onClick={() => toggleShowKey('deepseekKey')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={revealingKey === 'deepseekKey'}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
               >
-                {showKeys.deepseekKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {revealingKey === 'deepseekKey' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : showKeys.deepseekKey ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
             <Input
@@ -333,9 +392,16 @@ export function SettingsForm() {
               <button
                 type="button"
                 onClick={() => toggleShowKey('holyshotToken')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                disabled={revealingKey === 'holyshotToken'}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-50"
               >
-                {showKeys.holyshotToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {revealingKey === 'holyshotToken' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : showKeys.holyshotToken ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
               </button>
             </div>
             <Input
