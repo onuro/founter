@@ -45,7 +45,7 @@ export function GeneratorLayout() {
 
 
       {/* Main Content */}
-      <main className="mx-auto px-6 pl-2">
+      <main className="mr-3.5">
         <div className="grid lg:grid-cols-[350px_1fr] 3xl:grid-cols-[500px_1fr] gap-4 items-start">
 
           {/* Controls Sidebar */}

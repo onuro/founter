@@ -188,7 +188,7 @@ export function FetcherLayout() {
     <div className="min-h-screen bg-background text-foreground">
       <ContentHeader title="Fetcher" />
 
-      <main className="mx-auto px-6 pl-2">
+      <main className="pr-3.5">
         <Card className='rounded-b-xs'>
           <div className="p-2 flex items-start justify-between">
             <div>

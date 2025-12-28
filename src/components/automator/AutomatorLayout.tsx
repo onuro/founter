@@ -149,7 +149,7 @@ export function AutomatorLayout() {
   };
 
   return (
-    <div className="p-6 pl-2 pr-6 pt-0 space-y-6">
+    <div className="p-6 pl-0 pr-4 pt-0 space-y-6">
       {/* Header */}
       <Card>
         <CardHeader>

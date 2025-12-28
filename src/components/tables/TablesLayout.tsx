@@ -284,7 +284,7 @@ export function TablesLayout() {
   const selectedRow = table?.rows.find((r) => r.id === selectedRowId) || null;
 
   return (
-    <div className="grid grid-cols-[260px_1fr] h-[calc(100vh-5.8rem)] ml-2.5 mr-5 rounded-md overflow-hidden">
+    <div className="grid grid-cols-[260px_1fr] h-[calc(100vh-5.8rem)] ml-0 mr-3.5 rounded-md overflow-hidden">
       {/* Sidebar */}
       <div className="border-r border-border">
         <TablesSidebar
