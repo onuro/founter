@@ -60,7 +60,7 @@ function renderSelectValue(
           <span
             key={idx}
             className={cn(
-              'inline-flex items-center px-2 py-0.5 rounded text-sm font-medium shrink-0',
+              'inline-flex items-center px-2 py-0.5 rounded text-sm shrink-0',
               color.bg,
               color.text
             )}

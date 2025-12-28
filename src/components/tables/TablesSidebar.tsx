@@ -191,7 +191,7 @@ export function TablesSidebar({
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-3 border-b border-r border-border">
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Tables
+          All Tables
         </h2>
         <Button
           variant="ghost"
