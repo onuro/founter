@@ -6,11 +6,18 @@ import { cn } from '@/lib/utils';
 import type { Field, FieldType, SelectFieldOptions, SelectChoice, RowHeight } from '@/types/tables';
 import { TAG_COLORS, TAG_BORING_STYLE, ROW_HEIGHT_CONFIG } from '@/types/tables';
 import { Lightbox } from '@/components/ui/lightbox';
+import { InlineEditor } from './inline-editors';
 
 interface TableCellProps {
   field: Field;
   value: unknown;
   rowHeight?: RowHeight;
+  // Inline editing props
+  isFocused?: boolean;
+  isEditing?: boolean;
+  onSave?: (value: unknown) => void;
+  onCancel?: () => void;
+  onOpenSheet?: () => void;
   className?: string;
 }
 
@@ -110,7 +117,9 @@ const ImageCell = memo(function ImageCell({ src }: ImageCellProps) {
 function renderCellValue(
   field: Field,
   value: unknown,
-  rowHeight: RowHeight = 'small'
+  rowHeight: RowHeight = 'small',
+  isFocused: boolean = false,
+  onOpenSheet?: () => void
 ): React.ReactNode {
   const type = field.type as FieldType;
 
@@ -128,17 +137,27 @@ function renderCellValue(
 
     case 'url':
       const urlStr = String(value);
+      // URL is only clickable when cell is focused
+      if (isFocused) {
+        return (
+          <div className="flex items-center gap-1 truncate w-full">
+            <span className="truncate text-amber-200">{urlStr}</span>
+            <button
+              type="button"
+              className="p-1 hover:bg-neutral-800 rounded shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(urlStr, '_blank');
+              }}
+            >
+              <ExternalLink className="w-3 h-3 text-amber-200" />
+            </button>
+          </div>
+        );
+      }
+      // Not focused - just show text, not clickable
       return (
-        <a
-          href={urlStr}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1 text-amber-200 hover:text-amber-100 truncate"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span className="truncate">{urlStr}</span>
-          <ExternalLink className="w-3 h-3 shrink-0" />
-        </a>
+        <span className="truncate text-amber-200">{urlStr}</span>
       );
 
     case 'select':
@@ -201,8 +220,40 @@ function renderCellValue(
 }
 
 export const TableCell = memo(
-  function TableCell({ field, value, rowHeight = 'small', className }: TableCellProps) {
+  function TableCell({
+    field,
+    value,
+    rowHeight = 'small',
+    isFocused = false,
+    isEditing = false,
+    onSave,
+    onCancel,
+    onOpenSheet,
+    className,
+  }: TableCellProps) {
     const config = ROW_HEIGHT_CONFIG[rowHeight];
+
+    // Render inline editor when editing
+    if (isEditing && onSave && onCancel) {
+      return (
+        <div
+          className={cn(
+            'flex px-3 py-2.5 text-sm',
+            field.type === 'select' && rowHeight !== 'small' ? 'items-start pt-1.5' : 'items-start',
+            className
+          )}
+          style={{ height: config.height }}
+        >
+          <InlineEditor
+            field={field}
+            value={value}
+            onSave={onSave}
+            onCancel={onCancel}
+            rowHeight={rowHeight}
+          />
+        </div>
+      );
+    }
 
     return (
       <div
@@ -214,7 +265,7 @@ export const TableCell = memo(
         )}
         style={{ height: config.height }}
       >
-        {renderCellValue(field, value, rowHeight)}
+        {renderCellValue(field, value, rowHeight, isFocused, onOpenSheet)}
       </div>
     );
   },
@@ -227,6 +278,8 @@ export const TableCell = memo(
       prevProps.field.options === nextProps.field.options &&
       prevProps.value === nextProps.value &&
       prevProps.rowHeight === nextProps.rowHeight &&
+      prevProps.isFocused === nextProps.isFocused &&
+      prevProps.isEditing === nextProps.isEditing &&
       prevProps.className === nextProps.className
     );
   }

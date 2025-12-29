@@ -337,10 +337,10 @@ export function AddFieldDialog({
                 </InputGroup>
 
                 {/* Allow multiple */}
-                {/* <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center justify-between pt-2">
                   <Label className="text-sm text-muted-foreground">Allow multiple selections</Label>
                   <Switch checked={allowMultiple} onCheckedChange={setAllowMultiple} />
-                </div> */}
+                </div>
 
                 {/* Boring mode */}
                 <div className="flex items-center justify-between">

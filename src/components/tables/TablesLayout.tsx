@@ -10,7 +10,7 @@ import { TableView } from './TableView';
 import { RowDetailSheet } from './RowDetailSheet';
 import { CreateTableDialog } from './CreateTableDialog';
 import { AddFieldDialog } from './AddFieldDialog';
-import type { Field, CreateFieldInput, RowHeight } from '@/types/tables';
+import type { Field, CreateFieldInput, RowHeight, CellPosition } from '@/types/tables';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,6 +45,10 @@ export function TablesLayout() {
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Inline editing state
+  const [focusedCell, setFocusedCell] = useState<CellPosition | null>(null);
+  const [editingCell, setEditingCell] = useState<CellPosition | null>(null);
 
   // Hooks
   const {
@@ -81,9 +85,11 @@ export function TablesLayout() {
     }
   }, [tableId, tables, isLoadingTables, router]);
 
-  // Clear selection when table changes
+  // Clear selection and cell focus when table changes
   useEffect(() => {
     setSelectedRowIds(new Set());
+    setFocusedCell(null);
+    setEditingCell(null);
   }, [tableId]);
 
   // Handlers
@@ -264,6 +270,45 @@ export function TablesLayout() {
     [deleteRow]
   );
 
+  // Inline editing handlers
+  const handleCellFocus = useCallback((position: CellPosition | null) => {
+    setFocusedCell(position);
+    if (!position) {
+      setEditingCell(null);
+    }
+  }, []);
+
+  const handleCellEdit = useCallback((position: CellPosition | null) => {
+    setEditingCell(position);
+    if (position) {
+      setFocusedCell(position);
+    }
+  }, []);
+
+  const handleInlineSave = useCallback(
+    async (rowId: string, fieldId: string, value: unknown) => {
+      try {
+        const row = table?.rows.find((r) => r.id === rowId);
+        if (!row) return;
+
+        const newValues = { ...row.values, [fieldId]: value };
+        await updateRow(rowId, { values: newValues });
+        // Silent success for fluid UX
+      } catch (error) {
+        toast.error('Failed to save');
+      }
+    },
+    [table?.rows, updateRow]
+  );
+
+  const handleOpenSheetForRow = useCallback((rowId: string) => {
+    setSelectedRowId(rowId);
+    setIsNewRow(false);
+    setIsRowSheetOpen(true);
+    setFocusedCell(null);
+    setEditingCell(null);
+  }, []);
+
   const handleDeleteSelectedRows = useCallback(async () => {
     if (selectedRowIds.size === 0) return;
 
@@ -322,6 +367,13 @@ export function TablesLayout() {
           onSelectionChange={setSelectedRowIds}
           onDeleteSelected={() => setShowDeleteConfirm(true)}
           isDeleting={isDeleting}
+          // Inline editing props
+          focusedCell={focusedCell}
+          editingCell={editingCell}
+          onCellFocus={handleCellFocus}
+          onCellEdit={handleCellEdit}
+          onInlineSave={handleInlineSave}
+          onOpenSheet={handleOpenSheetForRow}
         />
       </div>
 

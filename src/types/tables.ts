@@ -299,3 +299,9 @@ export const ROW_HEIGHT_CONFIG = {
   medium: { height: 64, selectMaxHeight: 52 },
   large: { height: 98, selectMaxHeight: 86 },
 } as const;
+
+// Cell position for inline editing
+export interface CellPosition {
+  rowId: string;
+  fieldId: string;
+}

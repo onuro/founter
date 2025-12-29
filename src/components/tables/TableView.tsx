@@ -5,7 +5,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Plus, Table2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import type { CustomTable, Field, RowHeight } from '@/types/tables';
+import type { CustomTable, Field, RowHeight, CellPosition } from '@/types/tables';
 import { ROW_HEIGHT_CONFIG } from '@/types/tables';
 import { TableHeader } from './TableHeader';
 import { TableRow } from './TableRow';
@@ -39,6 +39,13 @@ interface TableViewProps {
   onSelectionChange: (value: SetStateAction<Set<string>>) => void;
   onDeleteSelected?: () => void;
   isDeleting?: boolean;
+  // Inline editing props
+  focusedCell: CellPosition | null;
+  editingCell: CellPosition | null;
+  onCellFocus: (position: CellPosition | null) => void;
+  onCellEdit: (position: CellPosition | null) => void;
+  onInlineSave: (rowId: string, fieldId: string, value: unknown) => void;
+  onOpenSheet: (rowId: string) => void;
   className?: string;
 }
 
@@ -63,6 +70,12 @@ export function TableView({
   onSelectionChange,
   onDeleteSelected,
   isDeleting = false,
+  focusedCell,
+  editingCell,
+  onCellFocus,
+  onCellEdit,
+  onInlineSave,
+  onOpenSheet,
   className,
 }: TableViewProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -124,6 +137,164 @@ export function TableView({
       onLoadMore();
     }
   }, [virtualItems, rows.length, hasMore, isLoadingMore, onLoadMore]);
+
+  // Keyboard navigation
+  const getNextCell = useCallback(
+    (direction: 'left' | 'right' | 'up' | 'down' | 'next' | 'prev'): CellPosition | null => {
+      if (!focusedCell || !table) return null;
+
+      const { fields } = table;
+      const currentRowIndex = rows.findIndex((r) => r.id === focusedCell.rowId);
+      const currentFieldIndex = fields.findIndex((f) => f.id === focusedCell.fieldId);
+
+      if (currentRowIndex === -1 || currentFieldIndex === -1) return null;
+
+      let newRowIndex = currentRowIndex;
+      let newFieldIndex = currentFieldIndex;
+
+      switch (direction) {
+        case 'left':
+          newFieldIndex = Math.max(0, currentFieldIndex - 1);
+          break;
+        case 'right':
+          newFieldIndex = Math.min(fields.length - 1, currentFieldIndex + 1);
+          break;
+        case 'up':
+          newRowIndex = Math.max(0, currentRowIndex - 1);
+          break;
+        case 'down':
+          newRowIndex = Math.min(rows.length - 1, currentRowIndex + 1);
+          break;
+        case 'next': // Tab
+          if (currentFieldIndex < fields.length - 1) {
+            newFieldIndex = currentFieldIndex + 1;
+          } else if (currentRowIndex < rows.length - 1) {
+            newRowIndex = currentRowIndex + 1;
+            newFieldIndex = 0;
+          }
+          break;
+        case 'prev': // Shift+Tab
+          if (currentFieldIndex > 0) {
+            newFieldIndex = currentFieldIndex - 1;
+          } else if (currentRowIndex > 0) {
+            newRowIndex = currentRowIndex - 1;
+            newFieldIndex = fields.length - 1;
+          }
+          break;
+      }
+
+      const newRow = rows[newRowIndex];
+      const newField = fields[newFieldIndex];
+
+      if (!newRow || !newField) return null;
+      if (newRow.id === focusedCell.rowId && newField.id === focusedCell.fieldId) return null;
+
+      return { rowId: newRow.id, fieldId: newField.id };
+    },
+    [focusedCell, table, rows]
+  );
+
+  // Scroll row into view when navigating
+  const scrollToRow = useCallback(
+    (rowId: string) => {
+      const rowIndex = rows.findIndex((r) => r.id === rowId);
+      if (rowIndex !== -1) {
+        virtualizer.scrollToIndex(rowIndex, { align: 'auto' });
+      }
+    },
+    [rows, virtualizer]
+  );
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle if we're editing (let the editor handle it)
+      if (editingCell) return;
+
+      // Don't handle if focus is in an input, textarea, or contenteditable
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
+      // Only handle if we have a focused cell or table is focused
+      if (!focusedCell && !scrollContainerRef.current?.contains(target)) {
+        return;
+      }
+
+      switch (e.key) {
+        case 'Tab': {
+          if (!focusedCell) return;
+          e.preventDefault();
+          const next = getNextCell(e.shiftKey ? 'prev' : 'next');
+          if (next) {
+            onCellFocus(next);
+            scrollToRow(next.rowId);
+          }
+          break;
+        }
+        case 'ArrowLeft': {
+          if (!focusedCell) return;
+          e.preventDefault();
+          const next = getNextCell('left');
+          if (next) onCellFocus(next);
+          break;
+        }
+        case 'ArrowRight': {
+          if (!focusedCell) return;
+          e.preventDefault();
+          const next = getNextCell('right');
+          if (next) onCellFocus(next);
+          break;
+        }
+        case 'ArrowUp': {
+          if (!focusedCell) return;
+          e.preventDefault();
+          const next = getNextCell('up');
+          if (next) {
+            onCellFocus(next);
+            scrollToRow(next.rowId);
+          }
+          break;
+        }
+        case 'ArrowDown': {
+          if (!focusedCell) return;
+          e.preventDefault();
+          const next = getNextCell('down');
+          if (next) {
+            onCellFocus(next);
+            scrollToRow(next.rowId);
+          }
+          break;
+        }
+        case ' ': { // Space - open sheet
+          if (!focusedCell) return;
+          e.preventDefault();
+          onOpenSheet(focusedCell.rowId);
+          break;
+        }
+        case 'Enter': { // Start editing
+          if (!focusedCell) return;
+          e.preventDefault();
+          onCellEdit(focusedCell);
+          break;
+        }
+        case 'Escape': { // Clear focus
+          if (focusedCell) {
+            e.preventDefault();
+            onCellFocus(null);
+          }
+          break;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [focusedCell, editingCell, getNextCell, onCellFocus, onCellEdit, onOpenSheet, scrollToRow]);
 
   if (isLoading) {
     return (
@@ -237,6 +408,12 @@ export function TableView({
                       isChecked={selectedRowIds.has(row.id)}
                       onCheckChange={() => toggleRowSelection(row.id)}
                       checkDisabled={isDeleting}
+                      focusedCell={focusedCell}
+                      editingCell={editingCell}
+                      onCellFocus={onCellFocus}
+                      onCellEdit={onCellEdit}
+                      onInlineSave={onInlineSave}
+                      onOpenSheet={onOpenSheet}
                     />
                   </div>
                 );
