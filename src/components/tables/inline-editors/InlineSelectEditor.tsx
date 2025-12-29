@@ -49,9 +49,9 @@ export function InlineSelectEditor({ value, onSave, onCancel, field }: InlineSel
     if (containerRef.current) {
       const rect = containerRef.current.getBoundingClientRect();
       setPosition({
-        top: rect.top,
-        left: rect.left,
-        width: rect.width,
+        top: rect.top - 8,
+        left: rect.left - 12,
+        width: rect.width + 24,
       });
     }
   }, []);

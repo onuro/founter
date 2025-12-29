@@ -95,11 +95,11 @@ export function InlineLongTextEditor({ value, onSave, onCancel, rowHeight = 'sma
       {/* Portal the editor to body to escape overflow constraints */}
       {position && createPortal(
         <div
-          className="fixed bg-neutral-950 border border-primary rounded shadow-lg"
+          className="fixed bg-neutral-950 border border-primary shadow-lg"
           style={{
-            top: position.top,
-            left: position.left,
-            width: position.width,
+            top: position.top - 8,
+            left: position.left - 12,
+            width: position.width + 24,
             zIndex: 9999,
           }}
         >
