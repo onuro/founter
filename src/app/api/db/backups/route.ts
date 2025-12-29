@@ -8,7 +8,8 @@ const BACKUPS_DIR = path.join(process.cwd(), 'backups');
 // Prisma resolves relative paths from schema.prisma location (prisma/), not project root
 function getDbPath(): string {
   const dbUrl = process.env.DATABASE_URL || 'file:./dev.db';
-  const filePath = dbUrl.replace('file:', '');
+  // Remove file: prefix and any query string (e.g., ?mode=wal)
+  const filePath = dbUrl.replace('file:', '').split('?')[0];
 
   if (filePath.startsWith('./') || filePath.startsWith('../')) {
     // Resolve relative to prisma/ directory (where schema.prisma lives)

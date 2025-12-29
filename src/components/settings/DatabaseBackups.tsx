@@ -93,9 +93,12 @@ export function DatabaseBackups() {
       const data = await response.json();
       if (data.success) {
         setSuccessMessage(
-          'Database restored successfully. A pre-restore backup was created automatically.'
+          'Database restored successfully. Reloading page...'
         );
-        await fetchBackups();
+        // Reload the page after a short delay to show the success message
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         setError(data.error || 'Failed to restore backup');
       }
@@ -282,7 +285,7 @@ export function DatabaseBackups() {
                   will be created automatically before restoring.
                 </p>
                 <p className="text-amber-500 font-medium">
-                  You may need to refresh the page after restoration.
+                  The page will automatically reload after restoration.
                 </p>
               </div>
             </AlertDialogDescription>

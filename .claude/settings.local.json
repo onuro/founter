@@ -33,7 +33,8 @@
       "Bash(sqlite3:*)",
       "Bash(node -e:*)",
       "Bash(npx tsc:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(xargs ls:*)"
     ]
   }
 }

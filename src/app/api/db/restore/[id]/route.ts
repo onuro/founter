@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { resetPrismaConnection } from '@/lib/prisma';
 
 const BACKUPS_DIR = path.join(process.cwd(), 'backups');
 
@@ -8,7 +9,8 @@ const BACKUPS_DIR = path.join(process.cwd(), 'backups');
 // Prisma resolves relative paths from schema.prisma location (prisma/), not project root
 function getDbPath(): string {
   const dbUrl = process.env.DATABASE_URL || 'file:./dev.db';
-  const filePath = dbUrl.replace('file:', '');
+  // Remove file: prefix and any query string (e.g., ?mode=wal)
+  const filePath = dbUrl.replace('file:', '').split('?')[0];
 
   if (filePath.startsWith('./') || filePath.startsWith('../')) {
     // Resolve relative to prisma/ directory (where schema.prisma lives)
@@ -58,6 +60,9 @@ export async function POST(
 
     // Restore from backup
     await fs.copyFile(backupPath, DB_PATH);
+
+    // Reset Prisma connection so it reads from the restored database
+    await resetPrismaConnection();
 
     return NextResponse.json({
       success: true,
