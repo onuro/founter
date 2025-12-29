@@ -1,17 +1,23 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { useTablesContext } from '@/contexts/TablesContext';
 import { useTable } from '@/hooks/useTable';
+import { useViews } from '@/hooks/useViews';
 import { TablesSidebar } from './TablesSidebar';
 import { TableView } from './TableView';
+import { CardView } from './CardView';
 import { RowDetailSheet } from './RowDetailSheet';
 import { CreateTableDialog } from './CreateTableDialog';
 import { AddFieldDialog } from './AddFieldDialog';
 import { ImportTableDialog } from './ImportTableDialog';
-import type { Field, CreateFieldInput, RowHeight, CellPosition } from '@/types/tables';
+import { ViewSwitcher } from './ViewSwitcher';
+import { ViewSettingsDialog } from './ViewSettingsDialog';
+import type { Field, CreateFieldInput, CellPosition } from '@/types/tables';
+import type { ViewType, ViewSettings } from '@/types/views';
+import { DEFAULT_VIEW_SETTINGS } from '@/types/views';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,6 +33,7 @@ export function TablesLayout() {
   const router = useRouter();
   const params = useParams();
   const tableId = params?.id as string | undefined;
+  const hasMigrated = useRef(false);
 
   // State
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null);
@@ -35,12 +42,8 @@ export function TablesLayout() {
   const [editingField, setEditingField] = useState<Field | null>(null);
   const [isRowSheetOpen, setIsRowSheetOpen] = useState(false);
   const [isNewRow, setIsNewRow] = useState(false);
-  const [rowHeight, setRowHeight] = useState<RowHeight>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('tables-row-height') as RowHeight) || 'small';
-    }
-    return 'small';
-  });
+  const [isViewSettingsOpen, setIsViewSettingsOpen] = useState(false);
+  const [settingsViewId, setSettingsViewId] = useState<string | null>(null);
 
   // Selection state
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
@@ -48,7 +51,7 @@ export function TablesLayout() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isImportTableOpen, setIsImportTableOpen] = useState(false);
 
-  // Inline editing state
+  // Inline editing state (for Grid view only)
   const [focusedCell, setFocusedCell] = useState<CellPosition | null>(null);
   const [editingCell, setEditingCell] = useState<CellPosition | null>(null);
 
@@ -64,6 +67,7 @@ export function TablesLayout() {
 
   const {
     table,
+    setTable,
     isLoading: isLoadingTable,
     isLoadingMore,
     refetch: refetchTable,
@@ -80,6 +84,62 @@ export function TablesLayout() {
     deleteRows,
   } = useTable(tableId || null, { paginate: true, pageSize: 100 });
 
+  // Views hook
+  const {
+    views,
+    activeView,
+    activeViewId,
+    setActiveViewId,
+    setViewsFromTable,
+    createView,
+    updateView,
+    updateViewSettings,
+    deleteView,
+    setDefaultView,
+  } = useViews(tableId || null, table?.views || [], {
+    onViewsChange: (newViews) => {
+      // Update table state with new views
+      if (table) {
+        setTable({ ...table, views: newViews });
+      }
+    },
+  });
+
+  // Sync views when table changes
+  useEffect(() => {
+    if (table?.views) {
+      setViewsFromTable(table.views);
+    }
+  }, [table?.id, table?.views, setViewsFromTable]);
+
+  // Migrate tables without views on first load
+  useEffect(() => {
+    if (!hasMigrated.current && !isLoadingTables) {
+      hasMigrated.current = true;
+      // Check if migration is needed
+      fetch('/api/tables/migrate-views', { method: 'GET' })
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.needsMigration) {
+            // Run migration silently
+            fetch('/api/tables/migrate-views', { method: 'POST' })
+              .then((res) => res.json())
+              .then((result) => {
+                if (result.success && result.migratedCount > 0) {
+                  console.log(`Migrated ${result.migratedCount} tables to have default views`);
+                  // Refetch current table if it was migrated
+                  if (table && table.views.length === 0) {
+                    refetchTable();
+                  }
+                }
+              })
+              .catch(console.error);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isLoadingTables, table, refetchTable]);
+
   // Auto-select first table if none selected
   useEffect(() => {
     if (!tableId && tables.length > 0 && !isLoadingTables) {
@@ -94,7 +154,95 @@ export function TablesLayout() {
     setEditingCell(null);
   }, [tableId]);
 
-  // Handlers
+  // Get current view settings
+  const currentViewSettings = activeView?.settings || DEFAULT_VIEW_SETTINGS;
+  const isCardView = activeView?.type === 'card';
+
+  // View handlers
+  const handleCreateView = useCallback(
+    async (name: string, type: ViewType) => {
+      try {
+        await createView({ name, type });
+        toast.success('View created');
+      } catch (error) {
+        toast.error('Failed to create view');
+        throw error;
+      }
+    },
+    [createView]
+  );
+
+  const handleRenameView = useCallback(
+    async (viewId: string, name: string) => {
+      try {
+        await updateView(viewId, { name });
+        toast.success('View renamed');
+      } catch (error) {
+        toast.error('Failed to rename view');
+        throw error;
+      }
+    },
+    [updateView]
+  );
+
+  const handleDeleteView = useCallback(
+    async (viewId: string) => {
+      try {
+        await deleteView(viewId);
+        toast.success('View deleted');
+      } catch (error) {
+        toast.error('Failed to delete view');
+        throw error;
+      }
+    },
+    [deleteView]
+  );
+
+  const handleSetDefaultView = useCallback(
+    async (viewId: string) => {
+      try {
+        await setDefaultView(viewId);
+        toast.success('Default view updated');
+      } catch (error) {
+        toast.error('Failed to set default view');
+        throw error;
+      }
+    },
+    [setDefaultView]
+  );
+
+  const handleOpenViewSettings = useCallback((viewId: string) => {
+    setSettingsViewId(viewId);
+    setIsViewSettingsOpen(true);
+  }, []);
+
+  const handleSaveViewSettings = useCallback(
+    async (viewId: string, settings: Partial<ViewSettings>) => {
+      try {
+        await updateViewSettings(viewId, settings);
+        toast.success('View settings saved');
+      } catch (error) {
+        toast.error('Failed to save view settings');
+        throw error;
+      }
+    },
+    [updateViewSettings]
+  );
+
+  // Row height change (now updates view settings)
+  const handleRowHeightChange = useCallback(
+    async (height: 'small' | 'medium' | 'large') => {
+      if (!activeViewId) return;
+      try {
+        await updateViewSettings(activeViewId, { rowHeight: height });
+      } catch (error) {
+        toast.error('Failed to update row height');
+      }
+    },
+    [activeViewId, updateViewSettings]
+  );
+
+  // Table handlers
   const handleSelectTable = useCallback(
     (id: string) => {
       router.push(`/tables/${id}`);
@@ -121,7 +269,6 @@ export function TablesLayout() {
       try {
         await deleteTable(id);
         toast.success('Table deleted');
-        // Navigate to first remaining table or home
         const remaining = tables.filter((t) => t.id !== id);
         if (remaining.length > 0) {
           router.push(`/tables/${remaining[0].id}`);
@@ -165,7 +312,6 @@ export function TablesLayout() {
         throw new Error('Export failed');
       }
 
-      // Get filename from Content-Disposition header or generate one
       const contentDisposition = response.headers.get('Content-Disposition');
       let filename = 'table-export.json';
       if (contentDisposition) {
@@ -175,7 +321,6 @@ export function TablesLayout() {
         }
       }
 
-      // Download the file
       const blob = await response.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -213,7 +358,6 @@ export function TablesLayout() {
 
         toast.success(`Imported "${result.data.tableName}" with ${result.data.rowCount} rows`);
 
-        // Navigate to the new table
         if (result.data.tableId) {
           router.push(`/tables/${result.data.tableId}`);
         }
@@ -226,6 +370,7 @@ export function TablesLayout() {
     [router]
   );
 
+  // Field handlers
   const handleAddField = useCallback(async () => {
     setEditingField(null);
     setIsAddFieldOpen(true);
@@ -275,7 +420,6 @@ export function TablesLayout() {
       try {
         if (editingField) {
           await updateField(editingField.id, { ...input, cleanupChoiceIds });
-          // Refetch table if rows were cleaned up to update row state
           if (cleanupChoiceIds && cleanupChoiceIds.length > 0) {
             await refetchTable();
           }
@@ -292,11 +436,7 @@ export function TablesLayout() {
     [editingField, createField, updateField, refetchTable]
   );
 
-  const handleRowHeightChange = useCallback((height: RowHeight) => {
-    setRowHeight(height);
-    localStorage.setItem('tables-row-height', height);
-  }, []);
-
+  // Row handlers
   const handleAddRow = useCallback(() => {
     setSelectedRowId(null);
     setIsNewRow(true);
@@ -340,7 +480,7 @@ export function TablesLayout() {
     [deleteRow]
   );
 
-  // Inline editing handlers
+  // Inline editing handlers (Grid view only)
   const handleCellFocus = useCallback((position: CellPosition | null) => {
     setFocusedCell(position);
     if (!position) {
@@ -363,7 +503,6 @@ export function TablesLayout() {
 
         const newValues = { ...row.values, [fieldId]: value };
         await updateRow(rowId, { values: newValues });
-        // Silent success for fluid UX
       } catch (error) {
         toast.error('Failed to save');
       }
@@ -397,6 +536,7 @@ export function TablesLayout() {
   }, [selectedRowIds, deleteRows]);
 
   const selectedRow = table?.rows.find((r) => r.id === selectedRowId) || null;
+  const settingsView = views.find((v) => v.id === settingsViewId) || null;
 
   return (
     <div className="grid grid-cols-[260px_1fr] h-[calc(100vh-5.8rem)] ml-0 mr-3.5 rounded-md overflow-hidden">
@@ -417,36 +557,73 @@ export function TablesLayout() {
       </div>
 
       {/* Main content */}
-      <div className="bg-background overflow-auto">
-        <TableView
-          table={table}
-          selectedRowId={selectedRowId}
-          onRowSelect={handleSelectRow}
-          onAddField={handleAddField}
-          onEditField={handleEditField}
-          onDeleteField={handleDeleteField}
-          onReorderFields={handleReorderFields}
-          onResizeField={handleResizeField}
-          onAddRow={handleAddRow}
-          isLoading={isLoadingTable}
-          rowHeight={rowHeight}
-          onRowHeightChange={handleRowHeightChange}
-          totalRows={totalRows}
-          hasMore={hasMore}
-          isLoadingMore={isLoadingMore}
-          onLoadMore={loadMoreRows}
-          selectedRowIds={selectedRowIds}
-          onSelectionChange={setSelectedRowIds}
-          onDeleteSelected={() => setShowDeleteConfirm(true)}
-          isDeleting={isDeleting}
-          // Inline editing props
-          focusedCell={focusedCell}
-          editingCell={editingCell}
-          onCellFocus={handleCellFocus}
-          onCellEdit={handleCellEdit}
-          onInlineSave={handleInlineSave}
-          onOpenSheet={handleOpenSheetForRow}
-        />
+      <div className="bg-background overflow-auto flex flex-col">
+        {/* View switcher header */}
+        {table && views.length > 0 && (
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-border bg-surface shrink-0">
+            <ViewSwitcher
+              views={views}
+              activeViewId={activeViewId}
+              onViewChange={setActiveViewId}
+              onCreateView={handleCreateView}
+              onRenameView={handleRenameView}
+              onDeleteView={handleDeleteView}
+              onSetDefault={handleSetDefaultView}
+              onOpenSettings={handleOpenViewSettings}
+              disabled={isLoadingTable}
+            />
+          </div>
+        )}
+
+        {/* View content */}
+        <div className="flex-1 min-h-0">
+          {isCardView ? (
+            <CardView
+              table={table}
+              viewSettings={currentViewSettings}
+              onRowSelect={handleSelectRow}
+              onAddRow={handleAddRow}
+              isLoading={isLoadingTable}
+              totalRows={totalRows}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              onLoadMore={loadMoreRows}
+              selectedRowIds={selectedRowIds}
+              onSelectionChange={setSelectedRowIds}
+              onDeleteSelected={() => setShowDeleteConfirm(true)}
+              isDeleting={isDeleting}
+            />
+          ) : (
+            <TableView
+              table={table}
+              selectedRowId={selectedRowId}
+              onRowSelect={handleSelectRow}
+              onAddField={handleAddField}
+              onEditField={handleEditField}
+              onDeleteField={handleDeleteField}
+              onReorderFields={handleReorderFields}
+              onResizeField={handleResizeField}
+              onAddRow={handleAddRow}
+              isLoading={isLoadingTable}
+              rowHeight={currentViewSettings.rowHeight}
+              onRowHeightChange={handleRowHeightChange}
+              totalRows={totalRows}
+              hasMore={hasMore}
+              isLoadingMore={isLoadingMore}
+              onLoadMore={loadMoreRows}
+              selectedRowIds={selectedRowIds}
+              onSelectionChange={setSelectedRowIds}
+              onDeleteSelected={() => setShowDeleteConfirm(true)}
+              isDeleting={isDeleting}
+              focusedCell={focusedCell}
+              editingCell={editingCell}
+              onCellFocus={handleCellFocus}
+              onCellEdit={handleCellEdit}
+              onInlineSave={handleInlineSave}
+              onOpenSheet={handleOpenSheetForRow}
+            />
+          )}
+        </div>
       </div>
 
       {/* Dialogs */}
@@ -479,6 +656,14 @@ export function TablesLayout() {
         onSave={handleSaveRow}
         onDelete={handleDeleteRow}
         isNew={isNewRow}
+      />
+
+      <ViewSettingsDialog
+        open={isViewSettingsOpen}
+        onOpenChange={setIsViewSettingsOpen}
+        view={settingsView}
+        fields={table?.fields || []}
+        onSave={handleSaveViewSettings}
       />
 
       {/* Bulk delete confirmation dialog */}

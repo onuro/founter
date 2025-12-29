@@ -12,24 +12,25 @@ datasource db {
 }
 
 model Settings {
-  id                      String   @id @default("default")
-  baserowToken            String?
-  baserowTokenDescription String?
-  baserowHost             String?  // "https://baserow.reaktorstudios.com"
-  baserowUsername         String?  // Email for JWT auth
-  baserowPassword         String?  // Password for JWT auth
-  openaiKey               String?
-  openaiKeyDescription    String?
-  anthropicKey            String?
-  anthropicKeyDescription String?
-  glmKey                  String?
-  glmKeyDescription       String?
-  deepseekKey             String?
-  deepseekKeyDescription  String?
-  holyshotToken           String?
+  id                       String   @id @default("default")
+  baserowToken             String?
+  baserowTokenDescription  String?
+  baserowHost              String?  // "https://baserow.reaktorstudios.com"
+  baserowUsername          String?  // Email for JWT auth
+  baserowPassword          String?  // Password for JWT auth
+  openaiKey                String?
+  openaiKeyDescription     String?
+  anthropicKey             String?
+  anthropicKeyDescription  String?
+  glmKey                   String?
+  glmKeyDescription        String?
+  deepseekKey              String?
+  deepseekKeyDescription   String?
+  holyshotToken            String?
   holyshotTokenDescription String?
-  updatedAt               DateTime @updatedAt
-  createdAt               DateTime @default(now())
+  streamlineCookies        String?
+  updatedAt                DateTime @updatedAt
+  createdAt                DateTime @default(now())
 }
 
 model SitePreset {
@@ -48,14 +49,30 @@ model SitePreset {
 // ==========================================
 
 model CustomTable {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   name      String
-  icon      String?  // emoji or lucide icon name
-  order     Int      @default(0)
+  icon      String?     // emoji or lucide icon name
+  order     Int         @default(0)
   fields    Field[]
   rows      Row[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  views     TableView[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model TableView {
+  id        String      @id @default(cuid())
+  tableId   String
+  table     CustomTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  name      String      @default("Grid")
+  type      String      @default("grid") // "grid" | "card"
+  isDefault Boolean     @default(false)
+  order     Int         @default(0)
+  settings  Json?       // ViewSettings JSON
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@index([tableId])
 }
 
 model Field {

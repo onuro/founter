@@ -1,6 +1,39 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { TableSummary, CustomTable, Field, FieldType, FieldOptions } from '@/types/tables';
+import type { TableSummary, CustomTable, FieldType, FieldOptions, TableView, ViewSettings } from '@/types/tables';
+import { DEFAULT_VIEW_SETTINGS, DEFAULT_CARD_SETTINGS } from '@/types/views';
+
+// Transform database view to API response
+function transformView(view: {
+  id: string;
+  tableId: string;
+  name: string;
+  type: string;
+  isDefault: boolean;
+  order: number;
+  settings: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}): TableView {
+  const rawSettings = view.settings as Partial<ViewSettings> | null;
+  const settings: ViewSettings = {
+    ...DEFAULT_VIEW_SETTINGS,
+    ...(view.type === 'card' ? DEFAULT_CARD_SETTINGS : {}),
+    ...rawSettings,
+  };
+
+  return {
+    id: view.id,
+    tableId: view.tableId,
+    name: view.name,
+    type: view.type as 'grid' | 'card',
+    isDefault: view.isDefault,
+    order: view.order,
+    settings,
+    createdAt: view.createdAt,
+    updatedAt: view.updatedAt,
+  };
+}
 
 function transformTable(dbTable: {
   id: string;
@@ -26,6 +59,17 @@ function transformTable(dbTable: {
     tableId: string;
     values: unknown;
     order: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+  views: Array<{
+    id: string;
+    tableId: string;
+    name: string;
+    type: string;
+    isDefault: boolean;
+    order: number;
+    settings: unknown;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -57,6 +101,7 @@ function transformTable(dbTable: {
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     })),
+    views: dbTable.views.map(transformView),
   };
 }
 
@@ -118,7 +163,7 @@ export async function POST(request: Request) {
     });
     const newOrder = (maxOrderTable?.order ?? -1) + 1;
 
-    // Create table with a default "Name" field
+    // Create table with a default "Name" field and a default "Grid" view
     const table = await prisma.customTable.create({
       data: {
         name: name.trim(),
@@ -132,12 +177,24 @@ export async function POST(request: Request) {
             required: true,
           },
         },
+        views: {
+          create: {
+            name: 'Grid',
+            type: 'grid',
+            isDefault: true,
+            order: 0,
+            settings: DEFAULT_VIEW_SETTINGS as object,
+          },
+        },
       },
       include: {
         fields: {
           orderBy: { order: 'asc' },
         },
         rows: {
+          orderBy: { order: 'asc' },
+        },
+        views: {
           orderBy: { order: 'asc' },
         },
       },

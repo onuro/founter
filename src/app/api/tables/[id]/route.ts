@@ -1,6 +1,39 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import type { CustomTable, FieldType, FieldOptions } from '@/types/tables';
+import type { CustomTable, FieldType, FieldOptions, TableView, ViewSettings } from '@/types/tables';
+import { DEFAULT_VIEW_SETTINGS, DEFAULT_CARD_SETTINGS } from '@/types/views';
+
+// Transform database view to API response
+function transformView(view: {
+  id: string;
+  tableId: string;
+  name: string;
+  type: string;
+  isDefault: boolean;
+  order: number;
+  settings: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}): TableView {
+  const rawSettings = view.settings as Partial<ViewSettings> | null;
+  const settings: ViewSettings = {
+    ...DEFAULT_VIEW_SETTINGS,
+    ...(view.type === 'card' ? DEFAULT_CARD_SETTINGS : {}),
+    ...rawSettings,
+  };
+
+  return {
+    id: view.id,
+    tableId: view.tableId,
+    name: view.name,
+    type: view.type as 'grid' | 'card',
+    isDefault: view.isDefault,
+    order: view.order,
+    settings,
+    createdAt: view.createdAt,
+    updatedAt: view.updatedAt,
+  };
+}
 
 function transformTable(dbTable: {
   id: string;
@@ -26,6 +59,17 @@ function transformTable(dbTable: {
     tableId: string;
     values: unknown;
     order: number;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
+  views: Array<{
+    id: string;
+    tableId: string;
+    name: string;
+    type: string;
+    isDefault: boolean;
+    order: number;
+    settings: unknown;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -57,6 +101,7 @@ function transformTable(dbTable: {
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     })),
+    views: dbTable.views.map(transformView),
   };
 }
 
@@ -74,6 +119,9 @@ export async function GET(
       where: { id },
       include: {
         fields: {
+          orderBy: { order: 'asc' },
+        },
+        views: {
           orderBy: { order: 'asc' },
         },
         ...(includeRows && {
@@ -95,6 +143,7 @@ export async function GET(
     const tableData = {
       ...table,
       rows: includeRows ? table.rows : [],
+      views: table.views || [],
     };
 
     return NextResponse.json({
@@ -144,6 +193,9 @@ export async function PUT(
           orderBy: { order: 'asc' },
         },
         rows: {
+          orderBy: { order: 'asc' },
+        },
+        views: {
           orderBy: { order: 'asc' },
         },
       },

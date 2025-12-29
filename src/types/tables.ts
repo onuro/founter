@@ -68,6 +68,9 @@ export interface Row {
   updatedAt: Date;
 }
 
+// Re-export view types
+export type { TableView, ViewType, ViewSettings, FilterConfig, SortConfig } from './views';
+
 export interface CustomTable {
   id: string;
   name: string;
@@ -75,6 +78,7 @@ export interface CustomTable {
   order: number;
   fields: Field[];
   rows: Row[];
+  views: import('./views').TableView[];
   createdAt: Date;
   updatedAt: Date;
 }
