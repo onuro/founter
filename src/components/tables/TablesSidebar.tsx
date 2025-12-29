@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Table2, MoreHorizontal, Pencil, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Table2, MoreHorizontal, Pencil, Trash2, GripVertical, Download, Upload } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -38,6 +38,8 @@ interface TablesSidebarProps {
   onDeleteTable: (id: string) => void;
   onRenameTable: (id: string, name: string) => void;
   onReorderTables: (orderedIds: string[]) => void;
+  onExportTable: (id: string) => void;
+  onImportTable: () => void;
   isLoading?: boolean;
 }
 
@@ -47,6 +49,7 @@ interface SortableTableItemProps {
   onSelect: () => void;
   onDelete: () => void;
   onRename: (name: string) => void;
+  onExport: () => void;
 }
 
 function SortableTableItem({
@@ -55,6 +58,7 @@ function SortableTableItem({
   onSelect,
   onDelete,
   onRename,
+  onExport,
 }: SortableTableItemProps) {
   const [isRenaming, setIsRenaming] = useState(false);
   const [newName, setNewName] = useState(table.name);
@@ -146,6 +150,10 @@ function SortableTableItem({
             <Pencil className="w-4 h-4 mr-2" />
             Rename
           </DropdownMenuItem>
+          <DropdownMenuItem onClick={onExport}>
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={onDelete} variant="destructive">
             <Trash2 className="w-4 h-4 mr-2" />
             Delete
@@ -164,6 +172,8 @@ export function TablesSidebar({
   onDeleteTable,
   onRenameTable,
   onReorderTables,
+  onExportTable,
+  onImportTable,
   isLoading,
 }: TablesSidebarProps) {
   const sensors = useSensors(
@@ -190,14 +200,27 @@ export function TablesSidebar({
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           All Tables
         </h2>
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onCreateTable}
-          className="h-6 w-6"
-        >
-          <Plus className="w-4 h-4" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="h-6 w-6"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={onCreateTable}>
+              <Plus className="w-4 h-4 mr-2" />
+              Create Table
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={onImportTable}>
+              <Upload className="w-4 h-4 mr-2" />
+              Import Table
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Tables list */}
@@ -239,6 +262,7 @@ export function TablesSidebar({
                     onSelect={() => onSelectTable(table.id)}
                     onDelete={() => onDeleteTable(table.id)}
                     onRename={(name) => onRenameTable(table.id, name)}
+                    onExport={() => onExportTable(table.id)}
                   />
                 ))}
               </div>

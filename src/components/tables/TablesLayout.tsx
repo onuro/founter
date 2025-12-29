@@ -10,6 +10,7 @@ import { TableView } from './TableView';
 import { RowDetailSheet } from './RowDetailSheet';
 import { CreateTableDialog } from './CreateTableDialog';
 import { AddFieldDialog } from './AddFieldDialog';
+import { ImportTableDialog } from './ImportTableDialog';
 import type { Field, CreateFieldInput, RowHeight, CellPosition } from '@/types/tables';
 import {
   AlertDialog,
@@ -45,6 +46,7 @@ export function TablesLayout() {
   const [selectedRowIds, setSelectedRowIds] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isImportTableOpen, setIsImportTableOpen] = useState(false);
 
   // Inline editing state
   const [focusedCell, setFocusedCell] = useState<CellPosition | null>(null);
@@ -154,6 +156,74 @@ export function TablesLayout() {
       }
     },
     [reorderTables]
+  );
+
+  const handleExportTable = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(`/api/tables/${id}/export`);
+      if (!response.ok) {
+        throw new Error('Export failed');
+      }
+
+      // Get filename from Content-Disposition header or generate one
+      const contentDisposition = response.headers.get('Content-Disposition');
+      let filename = 'table-export.json';
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="(.+)"/);
+        if (match) {
+          filename = match[1];
+        }
+      }
+
+      // Download the file
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success('Table exported');
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export table');
+    }
+  }, []);
+
+  const handleImportTable = useCallback(
+    async (file: File, tableName: string) => {
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('tableName', tableName);
+
+        const response = await fetch('/api/tables/import', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Import failed');
+        }
+
+        toast.success(`Imported "${result.data.tableName}" with ${result.data.rowCount} rows`);
+
+        // Navigate to the new table
+        if (result.data.tableId) {
+          router.push(`/tables/${result.data.tableId}`);
+        }
+      } catch (error) {
+        console.error('Import error:', error);
+        toast.error('Failed to import table');
+        throw error;
+      }
+    },
+    [router]
   );
 
   const handleAddField = useCallback(async () => {
@@ -340,6 +410,8 @@ export function TablesLayout() {
           onDeleteTable={handleDeleteTable}
           onRenameTable={handleRenameTable}
           onReorderTables={handleReorderTables}
+          onExportTable={handleExportTable}
+          onImportTable={() => setIsImportTableOpen(true)}
           isLoading={isLoadingTables}
         />
       </div>
@@ -382,6 +454,12 @@ export function TablesLayout() {
         open={isCreateTableOpen}
         onOpenChange={setIsCreateTableOpen}
         onCreate={handleCreateTable}
+      />
+
+      <ImportTableDialog
+        open={isImportTableOpen}
+        onOpenChange={setIsImportTableOpen}
+        onImport={handleImportTable}
       />
 
       <AddFieldDialog
