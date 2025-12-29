@@ -116,7 +116,7 @@
 
   /* Muted */
   --muted: oklch(0.18 0 0);
-  --muted-foreground: oklch(0.55 0 0);
+  --muted-foreground: oklch(0.65 0 0);
   /* #71717a gray */
 
   /* Accent - subtle yellow tint for hovers */

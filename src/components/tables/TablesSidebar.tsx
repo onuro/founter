@@ -88,8 +88,9 @@ function SortableTableItem({
     <div
       ref={setNodeRef}
       style={style}
+      onClick={onSelect}
       className={cn(
-        'group flex items-center gap-2 px-2 py-1.5 rounded-sm transition-colors',
+        'group flex items-center gap-2 px-2 py-1.5 rounded-sm transition-colors cursor-pointer',
         isSelected ? 'bg-neutral-800/50' : 'hover:bg-neutral-900',
         isDragging && 'opacity-50'
       )}
@@ -97,6 +98,7 @@ function SortableTableItem({
       {/* Drag handle */}
       <button
         className="shrink-0 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 hover:text-foreground"
+        onClick={(e) => e.stopPropagation()}
         {...attributes}
         {...listeners}
       >
@@ -104,10 +106,7 @@ function SortableTableItem({
       </button>
 
       {/* Table icon & name */}
-      <button
-        onClick={onSelect}
-        className="flex-1 flex items-center gap-2 min-w-0 text-left"
-      >
+      <div className="flex-1 flex items-center gap-2 min-w-0 text-left">
         <Table2 className="w-4 h-4 shrink-0 text-muted-foreground" />
         {isRenaming ? (
           <input
@@ -126,7 +125,7 @@ function SortableTableItem({
         ) : (
           <span className="truncate text-sm">{table.name}</span>
         )}
-      </button>
+      </div>
 
       {/* Row count */}
       <span className="text-xs text-muted-foreground shrink-0">

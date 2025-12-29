@@ -217,7 +217,7 @@ export const CardItem = memo(function CardItem({
       )}
 
       {/* Card content */}
-      <div className="p-3 space-y-2">
+      <div className="p-4 space-y-4">
         {/* Title */}
         <h3 className="font-medium text-sm truncate">
           {titleValue ? String(titleValue) : <span className="text-muted-foreground">Untitled</span>}

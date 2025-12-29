@@ -82,10 +82,12 @@ export function RowDetailSheet({
     defaultValues: getDefaultValues(fields, row),
   });
 
-  // Reset form when row changes
+  // Reset form when row changes or when sheet opens for a new row
   useEffect(() => {
-    form.reset(getDefaultValues(fields, row));
-  }, [row, fields, form]);
+    if (open) {
+      form.reset(getDefaultValues(fields, row));
+    }
+  }, [open, row, fields, form]);
 
   const onSubmit = async (values: Record<string, unknown>) => {
     setIsSaving(true);
@@ -188,7 +190,10 @@ export function RowDetailSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full sm:max-w-[500px] flex flex-col">
+      <SheetContent
+        className="w-full sm:max-w-[500px] flex flex-col"
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
         <SheetHeader className="shrink-0">
           <SheetTitle>{isNew ? 'Add Row' : 'Edit Row'}</SheetTitle>
         </SheetHeader>
