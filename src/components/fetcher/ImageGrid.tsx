@@ -115,59 +115,59 @@ export function ImageGrid({ images, crawledUrl, gridOptions, onSave }: ImageGrid
                     <span className="hidden sm:inline">Grid Options</span>
                   </Button>
                 </PopoverTrigger>
-              <PopoverContent className="w-72" align="end">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Columns</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {COLUMN_OPTIONS.map((col) => (
-                        <Button
-                          key={col}
-                          variant={columns === col ? 'default' : 'outline'}
-                          size="sm"
-                          className="w-9 h-8 cursor-pointer"
-                          onClick={() => setColumns(col)}
-                        >
-                          {col}
-                        </Button>
-                      ))}
+                <PopoverContent className="w-72" align="end">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Columns</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {COLUMN_OPTIONS.map((col) => (
+                          <Button
+                            key={col}
+                            variant={columns === col ? 'default' : 'outline'}
+                            size="sm"
+                            className="w-9 h-8 cursor-pointer"
+                            onClick={() => setColumns(col)}
+                          >
+                            {col}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Gap</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {GAP_OPTIONS.map((option) => (
+                          <Button
+                            key={option.value}
+                            variant={gap === option.value ? 'default' : 'outline'}
+                            size="sm"
+                            className="w-9 h-8 cursor-pointer"
+                            onClick={() => setGap(option.value)}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <h4 className="font-medium text-sm">Aspect Ratio</h4>
+                      <div className="grid grid-cols-3 gap-1">
+                        {ASPECT_RATIO_OPTIONS.map((option) => (
+                          <Button
+                            key={option.value}
+                            variant={aspectRatio === option.value ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-8 text-xs cursor-pointer"
+                            onClick={() => setAspectRatio(option.value)}
+                            title={option.description}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Gap</h4>
-                    <div className="flex flex-wrap gap-1">
-                      {GAP_OPTIONS.map((option) => (
-                        <Button
-                          key={option.value}
-                          variant={gap === option.value ? 'default' : 'outline'}
-                          size="sm"
-                          className="w-9 h-8 cursor-pointer"
-                          onClick={() => setGap(option.value)}
-                        >
-                          {option.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-sm">Aspect Ratio</h4>
-                    <div className="grid grid-cols-3 gap-1">
-                      {ASPECT_RATIO_OPTIONS.map((option) => (
-                        <Button
-                          key={option.value}
-                          variant={aspectRatio === option.value ? 'default' : 'outline'}
-                          size="sm"
-                          className="h-8 text-xs cursor-pointer"
-                          onClick={() => setAspectRatio(option.value)}
-                          title={option.description}
-                        >
-                          {option.label}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </PopoverContent>
+                </PopoverContent>
               </Popover>
             </div>
           </CardTitle>
@@ -204,7 +204,7 @@ export function ImageGrid({ images, crawledUrl, gridOptions, onSave }: ImageGrid
                           src={image.src}
                           alt={image.alt || `Image ${index + 1}`}
                           fill
-                          loader={({ src }) => `/_next/image?url=${encodeURIComponent(src)}&w=640&q=75`}
+                          loader={({ src }) => `/_next/image?url=${encodeURIComponent(src)}&w=828&q=75`}
                           // sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                           className="object-cover object-top transition-transform group-hover:scale-105 ease-out-expo duration-500"
                           onError={() => handleImageError(image.src)}

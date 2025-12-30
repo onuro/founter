@@ -197,57 +197,59 @@ export function InlineSelectEditor({ value, onSave, onCancel, field }: InlineSel
             })}
 
             {/* Add button with popover */}
-            <Popover open={isOpen} onOpenChange={setIsOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 hover:bg-neutral-800"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-56 p-0" align="start">
-                <div className="p-2 border-b border-border">
-                  <div className="relative">
-                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                      ref={searchRef}
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search..."
-                      className="h-8 pl-8 text-sm"
-                    />
-                  </div>
-                </div>
-                <div className="max-h-48 overflow-y-auto p-1">
-                  {filteredChoices.length === 0 ? (
-                    <div className="px-2 py-3 text-sm text-muted-foreground text-center">
-                      No options found
+            <div className="basis-full">
+              <Popover open={isOpen} onOpenChange={setIsOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 w-6 p-0 hover:bg-neutral-800"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-56 p-0" align="start">
+                  <div className="p-2 border-b border-border">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        ref={searchRef}
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search..."
+                        className="h-8 pl-8 text-sm"
+                      />
                     </div>
-                  ) : (
-                    filteredChoices.map((choice: SelectChoice) => {
-                      const isSelected = selectedValues.includes(choice.id);
-                      const color = boringMode ? TAG_BORING_STYLE : getTagColor(choice.color);
-                      return (
-                        <button
-                          key={choice.id}
-                          type="button"
-                          className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-neutral-800 text-left"
-                          onClick={() => handleSelect(choice.id)}
-                        >
-                          <span className={cn('px-2 py-0.5 rounded text-sm font-medium', color.bg, color.text)}>
-                            {choice.label}
-                          </span>
-                          {isSelected && <Check className="w-4 h-4 ml-auto text-primary" />}
-                        </button>
-                      );
-                    })
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                  </div>
+                  <div className="max-h-48 overflow-y-auto p-1">
+                    {filteredChoices.length === 0 ? (
+                      <div className="px-2 py-3 text-sm text-muted-foreground text-center">
+                        No options found
+                      </div>
+                    ) : (
+                      filteredChoices.map((choice: SelectChoice) => {
+                        const isSelected = selectedValues.includes(choice.id);
+                        const color = boringMode ? TAG_BORING_STYLE : getTagColor(choice.color);
+                        return (
+                          <button
+                            key={choice.id}
+                            type="button"
+                            className="flex items-center gap-2 w-full px-2 py-1.5 rounded hover:bg-neutral-800 text-left"
+                            onClick={() => handleSelect(choice.id)}
+                          >
+                            <span className={cn('px-2 py-0.5 rounded text-sm font-medium', color.bg, color.text)}>
+                              {choice.label}
+                            </span>
+                            {isSelected && <Check className="w-4 h-4 ml-auto text-primary" />}
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>,
         document.body
