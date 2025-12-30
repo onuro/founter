@@ -140,12 +140,24 @@ export function TablesLayout() {
     }
   }, [isLoadingTables, table, refetchTable]);
 
-  // Auto-select first table if none selected
+  // Auto-select first table if none selected or if selected table doesn't exist
   useEffect(() => {
+    // No table selected - redirect to first table
     if (!tableId && tables.length > 0 && !isLoadingTables) {
       router.push(`/tables/${tables[0].id}`);
+      return;
     }
-  }, [tableId, tables, isLoadingTables, router]);
+
+    // Table ID in URL but table doesn't exist (e.g., after backup restore)
+    // Wait for both tables list and table fetch to complete
+    if (tableId && !table && !isLoadingTable && !isLoadingTables && tables.length > 0) {
+      // Check if the tableId exists in the tables list
+      const tableExists = tables.some((t) => t.id === tableId);
+      if (!tableExists) {
+        router.push(`/tables/${tables[0].id}`);
+      }
+    }
+  }, [tableId, table, tables, isLoadingTables, isLoadingTable, router]);
 
   // Clear selection and cell focus when table changes
   useEffect(() => {
