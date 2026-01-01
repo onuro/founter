@@ -224,53 +224,63 @@ export async function executeResourceEnricher(
     return steps;
   }
 
-  // Step 3: AI Summarize
-  startTime = Date.now();
-  // Extract markdown - it can be an object with raw_markdown or a string
-  let markdownContent = '';
-  if (crawlResult.markdown) {
-    if (typeof crawlResult.markdown === 'string') {
-      markdownContent = crawlResult.markdown;
-    } else if (crawlResult.markdown.raw_markdown) {
-      markdownContent = crawlResult.markdown.raw_markdown;
-    }
-  }
-  const content = markdownContent || crawlResult.cleaned_html || crawlResult.html || '';
-  if (!content) {
-    await addStep({
-      name: 'ai_summarize',
-      status: 'failed',
-      duration: Date.now() - startTime,
-      error: 'No content extracted from page',
-    });
-    return steps;
-  }
+  // Step 3: AI Summarize (optional)
+  let summary: { short: string; long: string } | null = null;
 
-  let summary: { short: string; long: string };
-  try {
-    const apiKey = await getAPIKey(config.ai.provider);
-    const aiClient = createAIClient(config.ai.provider, apiKey, config.ai.model);
-    summary = await aiClient.summarize(content, {
-      shortMaxLength: config.ai.shortMaxLength,
-      longMaxLength: config.ai.longMaxLength,
-    });
+  if (config.ai.enabled) {
+    startTime = Date.now();
+    // Extract markdown - it can be an object with raw_markdown or a string
+    let markdownContent = '';
+    if (crawlResult.markdown) {
+      if (typeof crawlResult.markdown === 'string') {
+        markdownContent = crawlResult.markdown;
+      } else if (crawlResult.markdown.raw_markdown) {
+        markdownContent = crawlResult.markdown.raw_markdown;
+      }
+    }
+    const content = markdownContent || crawlResult.cleaned_html || crawlResult.html || '';
+    if (!content) {
+      await addStep({
+        name: 'ai_summarize',
+        status: 'failed',
+        duration: Date.now() - startTime,
+        error: 'No content extracted from page',
+      });
+      return steps;
+    }
+
+    try {
+      const apiKey = await getAPIKey(config.ai.provider);
+      const aiClient = createAIClient(config.ai.provider, apiKey, config.ai.model);
+      summary = await aiClient.summarize(content, {
+        shortMaxLength: config.ai.shortMaxLength,
+        longMaxLength: config.ai.longMaxLength,
+      });
+      await addStep({
+        name: 'ai_summarize',
+        status: 'success',
+        duration: Date.now() - startTime,
+        data: {
+          shortLength: summary.short.length,
+          longLength: summary.long.length,
+        },
+      });
+    } catch (error) {
+      await addStep({
+        name: 'ai_summarize',
+        status: 'failed',
+        duration: Date.now() - startTime,
+        error: error instanceof Error ? error.message : 'Failed to summarize content',
+      });
+      return steps;
+    }
+  } else {
     await addStep({
       name: 'ai_summarize',
-      status: 'success',
-      duration: Date.now() - startTime,
-      data: {
-        shortLength: summary.short.length,
-        longLength: summary.long.length,
-      },
+      status: 'skipped',
+      duration: 0,
+      data: { reason: 'AI summarization disabled' },
     });
-  } catch (error) {
-    await addStep({
-      name: 'ai_summarize',
-      status: 'failed',
-      duration: Date.now() - startTime,
-      error: error instanceof Error ? error.message : 'Failed to summarize content',
-    });
-    return steps;
   }
 
   // Step 4: Capture Screenshots (only if enableImageFields is true)
@@ -338,10 +348,13 @@ export async function executeResourceEnricher(
     }
 
     // Build update data
-    const updateData: Record<string, unknown> = {
-      [config.baserow.shortDescField]: summary.short,
-      [config.baserow.longDescField]: summary.long,
-    };
+    const updateData: Record<string, unknown> = {};
+
+    // Add summary fields only if AI summarization was enabled and successful
+    if (summary) {
+      updateData[config.baserow.shortDescField] = summary.short;
+      updateData[config.baserow.longDescField] = summary.long;
+    }
 
     // Upload and add PNG file if captured
     if (pngScreenshot && config.baserow.pngField) {

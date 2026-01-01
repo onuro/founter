@@ -65,6 +65,9 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
   const [shortMaxLength, setShortMaxLength] = useState(150);
   const [longMaxLength, setLongMaxLength] = useState(500);
 
+  // AI toggle state
+  const [enableAI, setEnableAI] = useState(true);
+
   // Image fields state
   const [enableImageFields, setEnableImageFields] = useState(false);
   const [pngField, setPngField] = useState('');
@@ -93,6 +96,7 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
         // Set non-baserow fields immediately
         setName(automation.name);
         setDescription(automation.description || '');
+        setEnableAI(config.ai.enabled ?? true);
         setAiProvider(config.ai.provider);
         setAiModel(config.ai.model || AI_PROVIDERS[config.ai.provider].defaultModel);
         setShortMaxLength(config.ai.shortMaxLength);
@@ -166,8 +170,12 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
       toast.error('Name is required');
       return;
     }
-    if (!selectedTable || !urlField || !shortDescField || !longDescField) {
-      toast.error('Please configure all Baserow fields');
+    if (!selectedTable || !urlField) {
+      toast.error('Please configure Baserow table and URL field');
+      return;
+    }
+    if (enableAI && (!shortDescField || !longDescField)) {
+      toast.error('Please configure Short Desc and Long Desc fields for AI summarization');
       return;
     }
 
@@ -178,8 +186,8 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
           databaseId: parseInt(selectedDatabase, 10),
           tableId: parseInt(selectedTable, 10),
           urlField,
-          shortDescField,
-          longDescField,
+          shortDescField: enableAI ? shortDescField : '',
+          longDescField: enableAI ? longDescField : '',
           enableImageFields,
           pngField:
             enableImageFields && pngField && pngField !== '__none__'
@@ -191,6 +199,7 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
               : undefined,
         },
         ai: {
+          enabled: enableAI,
           provider: aiProvider,
           model: aiModel,
           shortMaxLength,
@@ -420,7 +429,7 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className={`grid grid-cols-1 gap-4 ${enableAI ? 'md:grid-cols-3' : ''}`}>
               <div className="space-y-2">
                 <Label>URL Field</Label>
                 <Select
@@ -443,45 +452,49 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Short Desc Field</Label>
-                <Select
-                  value={shortDescField}
-                  onValueChange={setShortDescField}
-                  disabled={!selectedTable || isLoadingFields}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fields.map((f) => (
-                      <SelectItem key={f.id} value={f.name}>
-                        {f.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {enableAI && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Short Desc Field</Label>
+                    <Select
+                      value={shortDescField}
+                      onValueChange={setShortDescField}
+                      disabled={!selectedTable || isLoadingFields}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fields.map((f) => (
+                          <SelectItem key={f.id} value={f.name}>
+                            {f.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-              <div className="space-y-2">
-                <Label>Long Desc Field</Label>
-                <Select
-                  value={longDescField}
-                  onValueChange={setLongDescField}
-                  disabled={!selectedTable || isLoadingFields}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {fields.map((f) => (
-                      <SelectItem key={f.id} value={f.name}>
-                        {f.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+                  <div className="space-y-2">
+                    <Label>Long Desc Field</Label>
+                    <Select
+                      value={longDescField}
+                      onValueChange={setLongDescField}
+                      disabled={!selectedTable || isLoadingFields}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {fields.map((f) => (
+                          <SelectItem key={f.id} value={f.name}>
+                            {f.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -569,80 +582,94 @@ export function AutomationForm({ automationId }: AutomationFormProps) {
 
         {/* AI Config */}
         <Card>
-          <CardHeader>
-            <CardTitle className="text-base">AI Configuration</CardTitle>
+          <CardHeader className="justify-between">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-3 mr-4">
+                <Sparkles className="w-4 h-4" />
+                AI Summarization
+              </CardTitle>
+              <Switch
+                checked={enableAI}
+                onCheckedChange={setEnableAI}
+              />
+            </div>
+            <p className="text-sm max-w-68 text-right text-muted-foreground">
+              Generate short and long descriptions using AI
+            </p>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Provider</Label>
-                <Select
-                  value={aiProvider}
-                  onValueChange={(v) => {
-                    setAiProvider(v as AIProvider);
-                    setAiModel(AI_PROVIDERS[v as AIProvider].defaultModel);
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(AI_PROVIDERS).map(([key, info]) => (
-                      <SelectItem key={key} value={key}>
-                        {info.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          {enableAI && (
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Provider</Label>
+                  <Select
+                    value={aiProvider}
+                    onValueChange={(v) => {
+                      setAiProvider(v as AIProvider);
+                      setAiModel(AI_PROVIDERS[v as AIProvider].defaultModel);
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Object.entries(AI_PROVIDERS).map(([key, info]) => (
+                        <SelectItem key={key} value={key}>
+                          {info.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Model</Label>
+                  <Select value={aiModel} onValueChange={setAiModel}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {AI_PROVIDERS[aiProvider]?.models.map((model) => (
+                        <SelectItem key={model} value={model}>
+                          {model}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>Model</Label>
-                <Select value={aiModel} onValueChange={setAiModel}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {AI_PROVIDERS[aiProvider]?.models.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="shortMax">Short Description Max Length</Label>
+                  <Input
+                    id="shortMax"
+                    type="number"
+                    value={shortMaxLength}
+                    onChange={(e) =>
+                      setShortMaxLength(parseInt(e.target.value, 10) || 150)
+                    }
+                    min={50}
+                    max={500}
+                  />
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="shortMax">Short Description Max Length</Label>
-                <Input
-                  id="shortMax"
-                  type="number"
-                  value={shortMaxLength}
-                  onChange={(e) =>
-                    setShortMaxLength(parseInt(e.target.value, 10) || 150)
-                  }
-                  min={50}
-                  max={500}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="longMax">Long Description Max Length</Label>
+                  <Input
+                    id="longMax"
+                    type="number"
+                    value={longMaxLength}
+                    onChange={(e) =>
+                      setLongMaxLength(parseInt(e.target.value, 10) || 500)
+                    }
+                    min={100}
+                    max={2000}
+                  />
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="longMax">Long Description Max Length</Label>
-                <Input
-                  id="longMax"
-                  type="number"
-                  value={longMaxLength}
-                  onChange={(e) =>
-                    setLongMaxLength(parseInt(e.target.value, 10) || 500)
-                  }
-                  min={100}
-                  max={2000}
-                />
-              </div>
-            </div>
-          </CardContent>
+            </CardContent>
+          )}
         </Card>
 
         {/* Submit */}

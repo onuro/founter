@@ -18,6 +18,7 @@ export interface ResourceEnricherConfig {
     webpField?: string;           // Field name for WebP screenshot
   };
   ai: {
+    enabled: boolean;
     provider: AIProvider;
     model?: string;
     shortMaxLength: number;
