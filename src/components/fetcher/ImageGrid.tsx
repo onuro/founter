@@ -204,7 +204,7 @@ export function ImageGrid({ images, crawledUrl, gridOptions, onSave }: ImageGrid
                           src={image.src}
                           alt={image.alt || `Image ${index + 1}`}
                           fill
-                          loader={({ src }) => `/_next/image?url=${encodeURIComponent(src)}&w=828&q=75`}
+                          loader={({ src }) => `/_next/image?url=${encodeURIComponent(src)}&w=1080&q=80`}
                           // sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
                           className="object-cover object-top transition-transform group-hover:scale-105 ease-out-expo duration-500"
                           onError={() => handleImageError(image.src)}
