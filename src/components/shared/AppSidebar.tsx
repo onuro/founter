@@ -16,13 +16,14 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
-import { Image, Globe, Settings, LogOut, Table2, Zap } from 'lucide-react';
+import { Image, Globe, Settings, LogOut, Table2, Zap, FolderOpen } from 'lucide-react';
 
 const navItems = [
   { label: 'Generator', href: '/generator', icon: Image },
   { label: 'Fetcher', href: '/fetcher', icon: Globe },
   { label: 'Automator', href: '/automator', icon: Zap },
   { label: 'Tables', href: '/tables', icon: Table2 },
+  { label: 'Media', href: '/media', icon: FolderOpen },
   { label: 'Settings', href: '/settings', icon: Settings },
 ];
 

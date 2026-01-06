@@ -168,3 +168,99 @@ model AutomationRun {
 
   @@index([automationId])
 }
+
+// ==========================================
+// Media Manager Feature
+// ==========================================
+
+model MediaProject {
+  id          String        @id @default(cuid())
+  name        String
+  description String?
+  icon        String?       // emoji or lucide icon name
+  order       Int           @default(0)
+  folders     MediaFolder[]
+  files       MediaFile[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+model MediaFolder {
+  id        String        @id @default(cuid())
+  projectId String
+  project   MediaProject  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    MediaFolder?  @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children  MediaFolder[] @relation("FolderHierarchy")
+  name      String
+  order     Int           @default(0)
+  files     MediaFile[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([projectId])
+  @@index([parentId])
+}
+
+model MediaFile {
+  id               String             @id @default(cuid())
+  projectId        String
+  project          MediaProject       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  folderId         String?
+  folder           MediaFolder?       @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  filename         String             // UUID-based filename on disk
+  originalFilename String             // User-visible filename
+  path             String             // Serving path: /api/uploads/media/{projectId}/{filename}
+  mimeType         String             // image/jpeg, image/png, etc.
+  size             Int                // File size in bytes
+  width            Int?               // Image dimensions
+  height           Int?
+  alt              String?            // Alt text for accessibility
+  metadata         Json?              // Additional metadata
+  order            Int                @default(0)
+  tags             MediaFileTag[]
+  versions         MediaFileVersion[]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([projectId])
+  @@index([folderId])
+}
+
+model MediaTag {
+  id        String         @id @default(cuid())
+  name      String         @unique
+  color     String         // Tailwind color name (red, orange, yellow, etc.)
+  files     MediaFileTag[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model MediaFileTag {
+  id        String    @id @default(cuid())
+  fileId    String
+  file      MediaFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  tagId     String
+  tag       MediaTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([fileId, tagId])
+  @@index([fileId])
+  @@index([tagId])
+}
+
+model MediaFileVersion {
+  id            String    @id @default(cuid())
+  fileId        String
+  file          MediaFile @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  filename      String    // Version filename on disk
+  path          String    // Serving path to version
+  size          Int
+  width         Int?
+  height        Int?
+  createdAt     DateTime  @default(now())
+
+  @@unique([fileId, versionNumber])
+  @@index([fileId])
+}
