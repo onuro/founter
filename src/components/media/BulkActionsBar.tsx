@@ -1,6 +1,6 @@
 'use client';
 
-import { X, Trash2, FolderInput, Tag, MoveHorizontal } from 'lucide-react';
+import { X, Trash2, FolderInput, Tag, MoveHorizontal, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,6 +15,8 @@ interface BulkActionsBarProps {
   selectedCount: number;
   onCancel: () => void;
   onDelete: () => void;
+  onDownload: () => void;
+  isDownloading?: boolean;
   folders: MediaFolder[];
   tags: MediaTagWithCount[];
   projects: MediaProject[];
@@ -28,6 +30,8 @@ export function BulkActionsBar({
   selectedCount,
   onCancel,
   onDelete,
+  onDownload,
+  isDownloading = false,
   folders,
   tags,
   projects,
@@ -136,6 +140,22 @@ export function BulkActionsBar({
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+
+        {/* Download */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2"
+          onClick={onDownload}
+          disabled={isDownloading}
+        >
+          {isDownloading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Download className="w-4 h-4" />
+          )}
+          {isDownloading ? 'Zipping...' : 'Download'}
+        </Button>
 
         {/* Delete */}
         <Button

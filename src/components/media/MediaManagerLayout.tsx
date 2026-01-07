@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
+import JSZip from 'jszip';
 import { Upload, Tag as TagIcon } from 'lucide-react';
 import { useMediaProjects } from '@/hooks/useMediaProjects';
 import { useMediaFiles } from '@/hooks/useMediaFiles';
@@ -54,6 +55,9 @@ export function MediaManagerLayout() {
   const [isCheckingUsage, setIsCheckingUsage] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [isBulkDelete, setIsBulkDelete] = useState(false);
+
+  // Download state
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const {
     projects,
@@ -392,6 +396,58 @@ export function MediaManagerLayout() {
     setDeleteUsage(null);
   }, []);
 
+  // Bulk download handler
+  const handleBulkDownload = useCallback(async () => {
+    const selectedFiles = files.filter(f => selectedFileIds.has(f.id));
+    if (selectedFiles.length === 0) return;
+
+    // Single file - direct download
+    if (selectedFiles.length === 1) {
+      const file = selectedFiles[0];
+      const link = document.createElement('a');
+      link.href = file.path;
+      link.download = file.originalFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      return;
+    }
+
+    // Multiple files - create zip
+    setIsDownloading(true);
+    try {
+      const zip = new JSZip();
+      const fetchPromises = selectedFiles.map(async (file) => {
+        try {
+          const response = await fetch(file.path);
+          const blob = await response.blob();
+          zip.file(file.originalFilename, blob);
+        } catch (err) {
+          console.error(`Failed to fetch ${file.originalFilename}:`, err);
+        }
+      });
+
+      await Promise.all(fetchPromises);
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `media-${selectedFiles.length}-files.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Downloaded ${selectedFiles.length} files`);
+    } catch (err) {
+      console.error('Failed to create zip:', err);
+      toast.error('Failed to download files');
+    } finally {
+      setIsDownloading(false);
+    }
+  }, [files, selectedFileIds]);
+
   const handleBulkMoveToFolder = useCallback(async (folderId: string | null) => {
     try {
       const response = await fetch('/api/media/files/bulk', {
@@ -577,6 +633,8 @@ export function MediaManagerLayout() {
             setSelectedFileIds(new Set());
           }}
           onDelete={handleBulkDeleteStart}
+          onDownload={handleBulkDownload}
+          isDownloading={isDownloading}
           folders={flatFolders}
           tags={tags}
           projects={projects}
