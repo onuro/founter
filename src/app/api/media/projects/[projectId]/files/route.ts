@@ -166,7 +166,7 @@ export async function POST(
 
     // Validate and process files
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    const maxSize = 10 * 1024 * 1024; // 10MB
+    const maxSize = 50 * 1024 * 1024; // 50MB
 
     const results: MediaFile[] = [];
     const errors: string[] = [];
@@ -192,7 +192,7 @@ export async function POST(
 
       // Validate size
       if (file.size > maxSize) {
-        errors.push(`${file.name}: File too large. Max 10MB`);
+        errors.push(`${file.name}: File too large. Max 50MB`);
         continue;
       }
 

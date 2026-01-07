@@ -18,6 +18,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Increase body size limit for file uploads (50MB)
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
+    middlewareClientMaxBodySize: '50mb',
+  },
 };
 
 export default withBundleAnalyzer(nextConfig);

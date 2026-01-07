@@ -324,8 +324,8 @@ export function MediaFileGrid({
                         </div>
                       )}
 
-                        {/* Info overlay */}
-                        <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        {/* Info overlay - always visible when renaming */}
+                        <div className={`absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/80 to-transparent transition-opacity ${isRenaming ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 pointer-events-none'}`}>
                           <div className="flex items-center justify-between">
                             <div className="flex-1 min-w-0">
                               {isRenaming ? (

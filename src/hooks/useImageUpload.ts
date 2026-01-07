@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { UploadedImage } from '@/types/generator';
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ACCEPTED_TYPES = ['image/png', 'image/jpeg', 'image/webp'];
 
 export function useImageUpload() {
@@ -22,7 +22,7 @@ export function useImageUpload() {
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setError('File size must be less than 10MB.');
+      setError('File size must be less than 50MB.');
       return;
     }
 

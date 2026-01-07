@@ -32,11 +32,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024;
+    // Validate file size (max 50MB)
+    const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
       return NextResponse.json(
-        { success: false, error: 'File too large. Max 10MB' },
+        { success: false, error: 'File too large. Max 50MB' },
         { status: 400 }
       );
     }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { Upload, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,8 @@ export interface FileDropzoneProps {
   className?: string;
   /** Additional class names for the inner dropzone */
   dropzoneClassName?: string;
+  /** Enable clipboard paste support (default: true for image accept types) */
+  enablePaste?: boolean;
 }
 
 export function FileDropzone({
@@ -41,9 +43,52 @@ export function FileDropzone({
   loadingText = 'Loading...',
   className,
   dropzoneClassName,
+  enablePaste,
 }: FileDropzoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showPasteFeedback, setShowPasteFeedback] = useState(false);
+
+  // Default enablePaste to true for image types
+  const shouldEnablePaste = enablePaste ?? accept.includes('image');
+
+  // Handle clipboard paste
+  useEffect(() => {
+    if (!shouldEnablePaste || disabled || isLoading) return;
+
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      const imageFiles: File[] = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            imageFiles.push(file);
+          }
+        }
+      }
+
+      if (imageFiles.length > 0) {
+        e.preventDefault();
+        // Create a FileList-like object
+        const dt = new DataTransfer();
+        const filesToAdd = multiple ? imageFiles : [imageFiles[0]];
+        filesToAdd.forEach(file => dt.items.add(file));
+
+        // Show paste feedback
+        setShowPasteFeedback(true);
+        setTimeout(() => setShowPasteFeedback(false), 500);
+
+        onFilesSelected(dt.files);
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, [shouldEnablePaste, disabled, isLoading, multiple, onFilesSelected]);
 
   const handleDrop = useCallback(
     (e: React.DragEvent<HTMLDivElement>) => {
@@ -105,7 +150,7 @@ export function FileDropzone({
           'shadow-inset-emboss-soft bg-muted',
           'hover:bg-neutral-900 hover:shadow-inset-emboss',
           'active:bg-muted active:shadow-none',
-          isDragging && 'bg-neutral-900 shadow-inset-emboss ring-2 ring-primary/50',
+          (isDragging || showPasteFeedback) && 'bg-neutral-900 shadow-inset-emboss ring-2 ring-primary/50',
           isDisabled && 'pointer-events-none opacity-50',
           dropzoneClassName
         )}

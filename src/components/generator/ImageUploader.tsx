@@ -67,7 +67,7 @@ export function ImageUploader({
             onFilesSelected={handleFilesSelected}
             accept="image/png,image/jpeg,image/webp"
             isLoading={isLoading}
-            title="Drop image or click to browse"
+            title="Drop, paste, or click to browse"
             description="PNG, JPG, WebP up to 10MB"
           />
         )}

@@ -528,8 +528,8 @@ export function MediaManagerLayout() {
               multiple
               isLoading={isUploading}
               icon={<Upload className="h-5 w-5 text-primary" />}
-              title="Drop images or click to upload"
-              description="PNG, JPG, WebP, GIF up to 10MB each"
+              title="Drop, paste, or click to upload"
+              description="PNG, JPG, WebP, GIF up to 50MB each"
               loadingText="Uploading..."
             />
 

@@ -132,7 +132,7 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
               onFilesSelected={handleFilesSelected}
               accept="image/*"
               isLoading={isUploading}
-              title="Click to upload"
+              title="Click or paste to upload"
               description="PNG, JPG, WebP"
               loadingText="Uploading..."
             />
