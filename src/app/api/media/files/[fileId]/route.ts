@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { unlink } from 'fs/promises';
 import path from 'path';
+import { Prisma } from '@/generated/prisma';
 import { prisma } from '@/lib/prisma';
 import type { MediaFile, MediaTag } from '@/types/media';
 
@@ -194,13 +195,99 @@ export async function PUT(
   }
 }
 
+// Helper: Check file usage in table rows
+async function checkFileUsage(filePath: string) {
+  // Get all image fields
+  const imageFields = await prisma.field.findMany({
+    where: { type: 'image' },
+    select: { id: true, tableId: true },
+  });
+  const imageFieldIds = new Set(imageFields.map((f) => f.id));
+
+  // Get all tables for name lookup
+  const tables = await prisma.customTable.findMany({
+    select: { id: true, name: true },
+  });
+  const tableMap = new Map(tables.map((t) => [t.id, t.name]));
+
+  // Get all rows and find matches
+  const rows = await prisma.row.findMany({
+    select: { id: true, tableId: true, values: true },
+  });
+
+  const tableUsage: Record<string, number> = {};
+  let totalCount = 0;
+
+  for (const row of rows) {
+    const values = row.values as Record<string, unknown>;
+    for (const [fieldId, value] of Object.entries(values)) {
+      if (imageFieldIds.has(fieldId) && value === filePath) {
+        totalCount++;
+        tableUsage[row.tableId] = (tableUsage[row.tableId] || 0) + 1;
+      }
+    }
+  }
+
+  return {
+    count: totalCount,
+    tables: Object.entries(tableUsage).map(([tableId, rowCount]) => ({
+      id: tableId,
+      name: tableMap.get(tableId) || 'Unknown Table',
+      rowCount,
+    })),
+  };
+}
+
+// Helper: Nullify image references in table rows
+async function nullifyImageReferences(imagePath: string): Promise<number> {
+  // Get all image field IDs
+  const imageFields = await prisma.field.findMany({
+    where: { type: 'image' },
+    select: { id: true },
+  });
+  const imageFieldIds = new Set(imageFields.map((f) => f.id));
+
+  // Find and update rows containing this path
+  const rows = await prisma.row.findMany();
+  let clearedCount = 0;
+
+  for (const row of rows) {
+    const values = row.values as Record<string, unknown>;
+    let updated = false;
+    const newValues = { ...values };
+
+    for (const [fieldId, value] of Object.entries(values)) {
+      if (imageFieldIds.has(fieldId) && value === imagePath) {
+        newValues[fieldId] = null;
+        updated = true;
+        clearedCount++;
+      }
+    }
+
+    if (updated) {
+      await prisma.row.update({
+        where: { id: row.id },
+        data: { values: newValues as Prisma.InputJsonValue },
+      });
+    }
+  }
+
+  return clearedCount;
+}
+
 // DELETE /api/media/files/[fileId] - Delete a file
+// Query params:
+//   ?checkUsage=true - Returns usage info instead of deleting
+//   ?cascadeNullify=true - Nullifies table field references before deleting
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ fileId: string }> }
 ) {
   try {
     const { fileId } = await params;
+    const { searchParams } = new URL(request.url);
+    const checkUsage = searchParams.get('checkUsage') === 'true';
+    const cascadeNullify = searchParams.get('cascadeNullify') === 'true';
 
     // Check if file exists
     const existing = await prisma.mediaFile.findUnique({
@@ -212,6 +299,27 @@ export async function DELETE(
         { success: false, error: 'File not found' },
         { status: 404 }
       );
+    }
+
+    // If checkUsage, return usage info without deleting
+    if (checkUsage) {
+      const usage = await checkFileUsage(existing.path);
+      return NextResponse.json({
+        success: true,
+        data: {
+          file: transformFile({
+            ...existing,
+            tags: [],
+          }),
+          usage,
+        },
+      });
+    }
+
+    // Cascade nullify if requested
+    let clearedReferences = 0;
+    if (cascadeNullify) {
+      clearedReferences = await nullifyImageReferences(existing.path);
     }
 
     // Delete from database (cascades to tags and versions)
@@ -235,6 +343,7 @@ export async function DELETE(
 
     return NextResponse.json({
       success: true,
+      clearedReferences,
     });
   } catch (error) {
     console.error('Failed to delete media file:', error);

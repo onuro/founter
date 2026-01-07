@@ -1,13 +1,15 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Expand, Maximize2 } from 'lucide-react';
+import { X, Maximize2, FolderOpen } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { FileDropzone } from '@/components/ui/file-dropzone';
+import { MediaPicker } from '@/components/media/MediaPicker';
 import type { Field } from '@/types/tables';
+import type { MediaFile } from '@/types/media';
 import { Lightbox } from '@/components/ui/lightbox';
 
 interface ImageInputProps {
@@ -21,6 +23,7 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
   const [urlValue, setUrlValue] = useState(value || '');
   const [isUploading, setIsUploading] = useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
 
   const handleUrlChange = (url: string) => {
     setUrlValue(url);
@@ -60,6 +63,11 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
   const clearImage = () => {
     onChange(null);
     setUrlValue('');
+  };
+
+  const handleMediaSelect = (file: MediaFile) => {
+    onChange(file.path);
+    setUrlValue(file.path);
   };
 
   return (
@@ -116,6 +124,7 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
         <Tabs defaultValue="upload" size="sm">
           <TabsList>
             <TabsTrigger value="upload">Upload</TabsTrigger>
+            <TabsTrigger value="library">Library</TabsTrigger>
             <TabsTrigger value="url">URL</TabsTrigger>
           </TabsList>
           <TabsContent value="upload">
@@ -128,6 +137,17 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
               loadingText="Uploading..."
             />
           </TabsContent>
+          <TabsContent value="library">
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full h-20 gap-2"
+              onClick={() => setIsMediaPickerOpen(true)}
+            >
+              <FolderOpen className="w-5 h-5" />
+              Browse Media Library
+            </Button>
+          </TabsContent>
           <TabsContent value="url">
             <Input
               type="text"
@@ -139,6 +159,13 @@ export function ImageInput({ field, value, onChange, tableId }: ImageInputProps)
           </TabsContent>
         </Tabs>
       )}
+
+      {/* Media Picker */}
+      <MediaPicker
+        open={isMediaPickerOpen}
+        onOpenChange={setIsMediaPickerOpen}
+        onSelect={handleMediaSelect}
+      />
     </div>
   );
 }

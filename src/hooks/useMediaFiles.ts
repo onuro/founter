@@ -140,6 +140,7 @@ export function useMediaFiles({ projectId, folderId, page = 1, limit = 50 }: Use
     isLoading,
     error,
     fetchFiles,
+    refreshFiles: fetchFiles,
     uploadFiles,
     updateFile,
     deleteFile,
